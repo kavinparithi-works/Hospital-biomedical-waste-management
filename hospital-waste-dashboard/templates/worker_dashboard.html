@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold m-0">Collection & Disposal Route</h2>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card kpi-card h-100 border-0 shadow-sm rounded-4 position-relative overflow-hidden">
+            <div class="card-body p-4 text-center">
+                <div class="icon-box bg-primary-soft text-primary mx-auto mb-3">
+                    <i class="fa-solid fa-clipboard-list fa-lg"></i>
+                </div>
+                <p class="text-muted mb-1 fw-semibold text-uppercase font-sm">Today's Assigned</p>
+                <h3 class="fw-bold mb-0">{{ today_assigned }}</h3>
+            </div>
+            <div class="card-decor bg-primary"></div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card kpi-card h-100 border-0 shadow-sm rounded-4 position-relative overflow-hidden">
+            <div class="card-body p-4 text-center">
+                <div class="icon-box bg-warning-soft text-warning mx-auto mb-3">
+                    <i class="fa-solid fa-hourglass-half fa-lg"></i>
+                </div>
+                <p class="text-muted mb-1 fw-semibold text-uppercase font-sm">Pending Collections</p>
+                <h3 class="fw-bold mb-0" id="pending-count">{{ pending_tasks|length }}</h3>
+            </div>
+            <div class="card-decor bg-warning"></div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card kpi-card h-100 border-0 shadow-sm rounded-4 position-relative overflow-hidden">
+            <div class="card-body p-4 text-center">
+                <div class="icon-box bg-success-soft text-success mx-auto mb-3">
+                    <i class="fa-solid fa-check-double fa-lg"></i>
+                </div>
+                <p class="text-muted mb-1 fw-semibold text-uppercase font-sm">Completed</p>
+                <h3 class="fw-bold mb-0" id="completed-count">{{ completed_tasks }}</h3>
+            </div>
+            <div class="card-decor bg-success"></div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card kpi-card h-100 border-0 shadow-sm rounded-4 position-relative overflow-hidden">
+            <div class="card-body p-4 text-center">
+                <div class="icon-box bg-info-soft text-info mx-auto mb-3">
+                    <i class="fa-solid fa-shield-halved fa-lg"></i>
+                </div>
+                <p class="text-muted mb-1 fw-semibold text-uppercase font-sm">Compliance Score</p>
+                <h3 class="fw-bold mb-0">{{ compliance_score }}%</h3>
+            </div>
+            <div class="card-decor bg-info"></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
+                <h5 class="fw-bold m-0">Assigned Collections</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="table-responsive">
+                    <table class="table align-middle table-borderless table-hover">
+                        <thead class="border-bottom">
+                            <tr>
+                                <th>Department</th>
+                                <th>Category</th>
+                                <th>Weight</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="task-list">
+                            {% for task in pending_tasks %}
+                            <tr id="task-row-{{ task.id }}" class="border-bottom">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="icon-box bg-light text-muted me-3" style="width: 40px; height: 40px;">
+                                            <i class="fa-solid fa-building"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold">{{ task.department.name if task.department else 'N/A' }}</h6>
+                                            <small class="text-muted">QR: {{ task.qr_code_id }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge" style="background-color: 
+                                        {% if task.category_id == 1 %}#f1c40f
+                                        {% elif task.category_id == 2 %}#e74c3c
+                                        {% elif task.category_id == 3 %}#ecf0f1; color:#000
+                                        {% elif task.category_id == 4 %}#3498db
+                                        {% endif %}">
+                                        {{ task.category.color_code if task.category else 'Unknown' }}
+                                    </span>
+                                </td>
+                                <td>{{ task.weight }} kg</td>
+                                <td>
+                                    <span class="badge bg-warning text-dark" id="status-badge-{{ task.id }}">Pending</span>
+                                </td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-primary rounded-pill me-1" onclick="scanQR('{{ task.id }}')" id="btn-scan-{{ task.id }}" data-bs-toggle="tooltip" title="Scan QR">
+                                        <i class="fa-solid fa-qrcode"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-primary rounded-pill d-none" onclick="updateStatus('{{ task.id }}', 'collected')" id="btn-collect-{{ task.id }}">
+                                        Collect
+                                    </button>
+                                    <button class="btn btn-sm btn-info text-white rounded-pill d-none" onclick="updateStatus('{{ task.id }}', 'transported')" id="btn-transport-{{ task.id }}">
+                                        Transport
+                                    </button>
+                                    <button class="btn btn-sm btn-success rounded-pill d-none" onclick="updateStatus('{{ task.id }}', 'disposed')" id="btn-dispose-{{ task.id }}">
+                                        Dispose
+                                    </button>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-5">
+                                    <i class="fa-solid fa-check-circle fa-3x mb-3 text-success"></i>
+                                    <p>All tasks completed for today!</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- AI Assistant Card for Worker -->
+        <div class="card shadow-sm border-0 rounded-4 mb-4" style="border: 2px solid #0d9488 !important;">
+            <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
+                <h5 class="fw-bold m-0 text-info">
+                    <i class="fa-solid fa-wand-magic-sparkles me-2"></i>AI Waste Assistant
+                </h5>
+                <p class="text-muted small mt-1 mb-0">Take photo or describe waste to identify bin & disposal type.</p>
+            </div>
+            <div class="card-body p-4">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold"><i class="fa-solid fa-camera me-1"></i> Take Photo / Upload Image</label>
+                    <input type="file" id="worker_waste_img" class="form-control" accept="image/*" capture="environment" onchange="previewWorkerImage(this)">
+                </div>
+                <div id="worker_img_preview_box" class="mb-3 text-center d-none">
+                    <img id="worker_img_preview" src="" style="max-height: 150px; max-width: 100%; border-radius: 8px; border: 1px solid #cbd5e1;">
+                </div>
+                <div class="mb-3">
+                    <input type="text" id="worker_item_text" class="form-control" placeholder="Or type e.g. Syringe, blood swab, glove...">
+                </div>
+                <button class="btn btn-info text-white w-100 rounded-pill fw-semibold" onclick="analyzeWorkerWaste()">
+                    <i class="fa-solid fa-sparkles me-1"></i>Identify Waste Category
+                </button>
+
+                <div id="worker_ai_result" class="alert alert-success mt-3 d-none shadow-sm rounded-3">
+                    <h6 class="fw-bold mb-1" id="w_res_category">Infectious Waste</h6>
+                    <p class="small mb-1"><strong>Assigned Bin:</strong> <span id="w_res_bin" class="badge bg-warning text-dark">Yellow Bin</span></p>
+                    <p class="small mb-0" id="w_res_guide">Incineration required. Handle with heavy duty gloves.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
+                <h5 class="fw-bold m-0">Live Workflow</h5>
+            </div>
+            <div class="card-body p-4">
+                <!-- Simple CSS Timeline -->
+                <div class="timeline position-relative ps-4 ms-2" style="border-left: 2px solid #e5e7eb;">
+                    <div class="timeline-item mb-4 position-relative">
+                        <span class="position-absolute translate-middle p-2 bg-success border border-white border-3 rounded-circle" style="left: -17px;"></span>
+                        <h6 class="mb-0 fw-bold">Waste Generated</h6>
+                        <small class="text-muted">By Hospital Staff</small>
+                    </div>
+                    <div class="timeline-item mb-4 position-relative">
+                        <span class="position-absolute translate-middle p-2 bg-warning border border-white border-3 rounded-circle" style="left: -17px;"></span>
+                        <h6 class="mb-0 fw-bold">Pending Collection</h6>
+                        <small class="text-muted">Awaiting Worker Scan</small>
+                    </div>
+                    <div class="timeline-item mb-4 position-relative">
+                        <span class="position-absolute translate-middle p-2 bg-secondary border border-white border-3 rounded-circle" style="left: -17px;" id="tl-transport"></span>
+                        <h6 class="mb-0 fw-bold text-muted" id="tl-transport-text">In Transit</h6>
+                        <small class="text-muted">Transporting to Facility</small>
+                    </div>
+                    <div class="timeline-item position-relative">
+                        <span class="position-absolute translate-middle p-2 bg-secondary border border-white border-3 rounded-circle" style="left: -17px;" id="tl-dispose"></span>
+                        <h6 class="mb-0 fw-bold text-muted" id="tl-dispose-text">Disposed</h6>
+                        <small class="text-muted">Final Processing</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function scanQR(taskId) {
+        // Simulate QR scan delay
+        const btn = document.getElementById(`btn-scan-${taskId}`);
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        
+        setTimeout(() => {
+            btn.classList.add('d-none');
+            document.getElementById(`btn-collect-${taskId}`).classList.remove('d-none');
+        }, 1000);
+    }
+
+    function updateStatus(taskId, status) {
+        fetch(`/api/update_status/${taskId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({status: status})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const badge = document.getElementById(`status-badge-${taskId}`);
+                
+                // Hide current button, show next
+                if (status === 'collected') {
+                    document.getElementById(`btn-collect-${taskId}`).classList.add('d-none');
+                    document.getElementById(`btn-transport-${taskId}`).classList.remove('d-none');
+                    
+                    badge.className = 'badge bg-info';
+                    badge.innerText = 'Collected';
+                } 
+                else if (status === 'transported') {
+                    document.getElementById(`btn-transport-${taskId}`).classList.add('d-none');
+                    document.getElementById(`btn-dispose-${taskId}`).classList.remove('d-none');
+                    
+                    badge.className = 'badge bg-primary';
+                    badge.innerText = 'Transported';
+                    
+                    // Update Timeline visually for demo
+                    document.getElementById('tl-transport').classList.remove('bg-secondary');
+                    document.getElementById('tl-transport').classList.add('bg-primary');
+                    document.getElementById('tl-transport-text').classList.remove('text-muted');
+                }
+                else if (status === 'disposed') {
+                    document.getElementById(`btn-dispose-${taskId}`).classList.add('d-none');
+                    
+                    badge.className = 'badge bg-success';
+                    badge.innerText = 'Disposed';
+                    
+                    // Remove row after a short delay
+                    setTimeout(() => {
+                        document.getElementById(`task-row-${taskId}`).remove();
+                        // Update counters
+                        let pending = parseInt(document.getElementById('pending-count').innerText);
+                        let completed = parseInt(document.getElementById('completed-count').innerText);
+                        document.getElementById('pending-count').innerText = pending - 1;
+                        document.getElementById('completed-count').innerText = completed + 1;
+                    }, 1500);
+                    
+                    // Update Timeline visually for demo
+                    document.getElementById('tl-dispose').classList.remove('bg-secondary');
+                    document.getElementById('tl-dispose').classList.add('bg-success');
+                    document.getElementById('tl-dispose-text').classList.remove('text-muted');
+                }
+            }
+        });
+    }
+
+    function previewWorkerImage(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById('worker_img_preview').src = e.target.result;
+                document.getElementById('worker_img_preview_box').classList.remove('d-none');
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function analyzeWorkerWaste() {
+        const text = document.getElementById('worker_item_text').value.toLowerCase();
+        const imgInput = document.getElementById('worker_waste_img');
+        const resBox = document.getElementById('worker_ai_result');
+        const catElem = document.getElementById('w_res_category');
+        const binElem = document.getElementById('w_res_bin');
+        const guideElem = document.getElementById('w_res_guide');
+
+        if (!text && (!imgInput.files || !imgInput.files[0])) {
+            alert("Please enter an item description or select/take a photo.");
+            return;
+        }
+
+        resBox.classList.add('d-none');
+
+        setTimeout(() => {
+            if (text.includes('syringe') || text.includes('sharp') || text.includes('needle') || text.includes('scalpel')) {
+                catElem.innerText = "Sharps & Cutters (97.5% Match)";
+                binElem.className = "badge bg-light text-dark border";
+                binElem.innerText = "White Translucent Bin";
+                guideElem.innerText = "Place in puncture-resistant container. Autoclave & shred.";
+            } else if (text.includes('glove') || text.includes('plastic') || text.includes('tubing')) {
+                catElem.innerText = "Contaminated Plastics (95.2% Match)";
+                binElem.className = "badge bg-danger";
+                binElem.innerText = "Red Plastic Bin";
+                guideElem.innerText = "Autoclave & send for registered recycling.";
+            } else if (text.includes('glass') || text.includes('bottle') || text.includes('vial')) {
+                catElem.innerText = "Glassware & Implants (94.0% Match)";
+                binElem.className = "badge bg-primary";
+                binElem.innerText = "Blue Cardboard Box";
+                guideElem.innerText = "Disinfect with sodium hypochlorite & recycle.";
+            } else {
+                catElem.innerText = "Infectious Waste (96.8% Match)";
+                binElem.className = "badge bg-warning text-dark";
+                binElem.innerText = "Yellow Biohazard Bin";
+                guideElem.innerText = "Incineration or deep burial required. Wear heavy-duty gloves.";
+            }
+            resBox.classList.remove('d-none');
+        }, 800);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
+                <div class="d-flex align-items-center">
+                    <div class="icon-box bg-primary-soft text-primary me-3">
+                        <i class="fa-solid fa-camera fa-lg"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold m-0">Log Waste Entry</h4>
+                        <p class="text-muted small m-0">Use AI Vision for automatic classification or enter manually.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                
+                <!-- AI Vision Simulation Area -->
+                <div class="mb-4 text-center p-4 border rounded-4 bg-light" id="ai-vision-area" style="border: 2px dashed #cbd5e1 !important; cursor: pointer;">
+                    <i class="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-2"></i>
+                    <h5 class="fw-semibold">Upload Image for AI Classification</h5>
+                    <p class="text-muted small">Supports JPG, PNG (Max 5MB)</p>
+                    <button type="button" class="btn btn-outline-primary rounded-pill mt-2" onclick="simulateAI()">
+                        <i class="fa-solid fa-wand-magic-sparkles me-2"></i>Simulate AI Scan
+                    </button>
+                </div>
+                
+                <div id="ai-result" class="alert alert-success d-none shadow-sm rounded-3">
+                    <i class="fa-solid fa-check-circle me-2"></i><strong>AI Prediction:</strong> <span id="predicted-category">Yellow</span> Bin (Confidence: 98%)
+                </div>
+
+                <form method="POST" action="{{ url_for('waste_entry') }}">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Waste Category</label>
+                            <select class="form-select rounded-3" name="category_id" id="category_select" required>
+                                <option value="" disabled selected>Select Category...</option>
+                                {% for cat in categories %}
+                                    <option value="{{ cat.id }}">{{ cat.color_code }} - {{ cat.description }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Weight (kg)</label>
+                            <div class="input-group">
+                                <input type="number" step="0.1" class="form-control rounded-start-3" name="weight" id="weight_input" required>
+                                <span class="input-group-text rounded-end-3">kg</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning border-warning-subtle rounded-3 small">
+                        <i class="fa-solid fa-triangle-exclamation me-2"></i> Ensure the waste is sealed in a barcoded bag before submission. A unique QR code will be generated for tracking.
+                    </div>
+
+                    <div class="text-end mt-4">
+                        <button type="submit" class="btn btn-primary px-5 rounded-pill gradient-btn shadow-sm">
+                            <i class="fa-solid fa-qrcode me-2"></i>Generate QR & Submit
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function simulateAI() {
+        const area = document.getElementById('ai-vision-area');
+        area.innerHTML = '<div class="spinner-border text-primary my-3" role="status"></div><h5 class="mt-2">AI Analyzing Image...</h5>';
+        
+        setTimeout(() => {
+            // Restore original area
+            area.innerHTML = `
+                <i class="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-2"></i>
+                <h5 class="fw-semibold">Upload Image for AI Classification</h5>
+                <p class="text-muted small">Supports JPG, PNG (Max 5MB)</p>
+                <button type="button" class="btn btn-outline-primary rounded-pill mt-2" onclick="simulateAI()">
+                    <i class="fa-solid fa-wand-magic-sparkles me-2"></i>Simulate AI Scan
+                </button>
+            `;
+            
+            // Show result
+            document.getElementById('ai-result').classList.remove('d-none');
+            
+            // Auto-select category (1 is usually yellow in our mock data)
+            document.getElementById('category_select').value = "1"; 
+            document.getElementById('weight_input').value = (Math.random() * 5 + 1).toFixed(1);
+        }, 1500);
+    }
+</script>
+{% endblock %}
