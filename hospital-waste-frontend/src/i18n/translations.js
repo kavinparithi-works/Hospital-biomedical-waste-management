@@ -12,6 +12,12 @@ export const LANGUAGES = [
 ];
 
 const en = {
+  chatbot: {
+    title: 'KMCH AI Waste Assistant', workerSub: 'Sanitation Floor Voice Helper', staffSub: 'Biomedical Waste & Protocols', online: 'Online', voiceOn: 'Voice On', voiceOff: 'Voice Off', clear: 'Clear conversation',
+    speechLang: 'Speech & Text Language:', recommended: 'Recommended Protocol', match: 'Match', disposal: 'Disposal Protocol', applied: 'Applied to Waste Form', apply: 'Apply Category & Bin to Form',
+    listen: 'Listen to message', photo: 'Upload or take a photo of the waste', speak: 'Click to speak in your language', stopListening: 'Stop listening', send: 'Send message', attached: 'Attached photo for AI scan', stop: 'Stop',
+    visionOff: 'Photo scanning is off — add GEMINI_API_KEY to the backend .env to enable it. Text and voice work normally.'
+  },
   common: {
     appName: 'KMCH', brandTag: 'BIOWASTE', brandSub: 'Analytics & Audit Cloud', hospital: 'KMCH HOSPITAL',
     hospitalFull: 'KMCH Kovai Medical Center & Hospital',
@@ -198,6 +204,12 @@ const en = {
 };
 
 const ta = {
+  chatbot: {
+    title: 'KMCH AI கழிவு உதவியாளர்', workerSub: 'துப்புரவு தள குரல் உதவி', staffSub: 'மருத்துவ கழிவு & நெறிமுறைகள்', online: 'ஆன்லைன்', voiceOn: 'குரல் ஆன்', voiceOff: 'குரல் ஆஃப்', clear: 'உரையாடலை அழி',
+    speechLang: 'பேச்சு & உரை மொழி:', recommended: 'பரிந்துரைக்கப்பட்ட நெறிமுறை', match: 'பொருத்தம்', disposal: 'அகற்றும் நெறிமுறை', applied: 'படிவத்தில் பயன்படுத்தப்பட்டது', apply: 'வகை & தொட்டியை படிவத்தில் பயன்படுத்து',
+    listen: 'செய்தியைக் கேள்', photo: 'கழிவின் புகைப்படத்தை பதிவேற்று / எடு', speak: 'உங்கள் மொழியில் பேச அழுத்தவும்', stopListening: 'கேட்பதை நிறுத்து', send: 'அனுப்பு', attached: 'AI ஸ்கேனுக்கு இணைக்கப்பட்ட புகைப்படம்', stop: 'நிறுத்து',
+    visionOff: 'புகைப்பட ஸ்கேன் முடக்கப்பட்டுள்ளது — பின்தள .env இல் GEMINI_API_KEY சேர்க்கவும். உரை & குரல் வழக்கம்போல் செயல்படும்.'
+  },
   common: {
     hospital: 'KMCH மருத்துவமனை', brandSub: 'பகுப்பாய்வு & தணிக்கை', systemLive: 'அமைப்பு இயங்குகிறது', mainMenu: 'முதன்மை பட்டி', logout: 'வெளியேறு',
     language: 'மொழி', dashboard: 'முகப்பு', refresh: 'புதுப்பி', search: 'தேடு', filter: 'வடிகட்டி', clear: 'அழி', close: 'மூடு', cancel: 'ரத்து',
@@ -328,6 +340,12 @@ const ta = {
 };
 
 const hi = {
+  chatbot: {
+    title: 'KMCH AI कचरा सहायक', workerSub: 'सफाई फ़्लोर वॉइस हेल्पर', staffSub: 'बायोमेडिकल कचरा व प्रोटोकॉल', online: 'ऑनलाइन', voiceOn: 'आवाज़ चालू', voiceOff: 'आवाज़ बंद', clear: 'बातचीत साफ़ करें',
+    speechLang: 'बोली व टेक्स्ट भाषा:', recommended: 'अनुशंसित प्रोटोकॉल', match: 'मिलान', disposal: 'निपटान प्रोटोकॉल', applied: 'फ़ॉर्म में लागू', apply: 'श्रेणी व डिब्बा फ़ॉर्म में लागू करें',
+    listen: 'संदेश सुनें', photo: 'कचरे की फ़ोटो अपलोड करें / लें', speak: 'अपनी भाषा में बोलने के लिए क्लिक करें', stopListening: 'सुनना बंद करें', send: 'भेजें', attached: 'AI स्कैन के लिए संलग्न फ़ोटो', stop: 'रोकें',
+    visionOff: 'फ़ोटो स्कैन बंद है — बैकएंड .env में GEMINI_API_KEY जोड़ें। टेक्स्ट व आवाज़ सामान्य रूप से काम करते हैं।'
+  },
   common: {
     hospital: 'KMCH अस्पताल', brandSub: 'विश्लेषण और ऑडिट', systemLive: 'सिस्टम सक्रिय', mainMenu: 'मुख्य मेनू', logout: 'लॉग आउट', language: 'भाषा', dashboard: 'डैशबोर्ड',
     refresh: 'रिफ्रेश', search: 'खोजें', filter: 'फ़िल्टर', clear: 'साफ़ करें', close: 'बंद करें', cancel: 'रद्द करें', save: 'सहेजें', saving: 'सहेजा जा रहा है...', loading: 'लोड हो रहा है...',
@@ -432,6 +450,12 @@ const hi = {
 };
 
 const te = {
+  chatbot: {
+    title: 'KMCH AI వ్యర్థ సహాయకుడు', workerSub: 'పారిశుధ్య వాయిస్ సహాయం', staffSub: 'బయోమెడికల్ వ్యర్థాలు & విధానాలు', online: 'ఆన్‌లైన్', voiceOn: 'వాయిస్ ఆన్', voiceOff: 'వాయిస్ ఆఫ్', clear: 'సంభాషణ క్లియర్',
+    speechLang: 'మాట & టెక్స్ట్ భాష:', recommended: 'సిఫార్సు చేసిన విధానం', match: 'సరిపోలిక', disposal: 'పారవేత విధానం', applied: 'ఫారమ్‌కు వర్తించబడింది', apply: 'వర్గం & తొట్టిని ఫారమ్‌కు వర్తించు',
+    listen: 'సందేశం వినండి', photo: 'వ్యర్థం ఫోటో అప్‌లోడ్ / తీయండి', speak: 'మీ భాషలో మాట్లాడటానికి క్లిక్ చేయండి', stopListening: 'వినడం ఆపు', send: 'పంపు', attached: 'AI స్కాన్ కోసం జత చేసిన ఫోటో', stop: 'ఆపు',
+    visionOff: 'ఫోటో స్కాన్ ఆఫ్‌లో ఉంది — బ్యాకెండ్ .env లో GEMINI_API_KEY జోడించండి. టెక్స్ట్ & వాయిస్ సాధారణంగా పనిచేస్తాయి.'
+  },
   common: {
     hospital: 'KMCH ఆసుపత్రి', brandSub: 'విశ్లేషణ & ఆడిట్', systemLive: 'సిస్టమ్ పనిచేస్తోంది', mainMenu: 'ప్రధాన మెనూ', logout: 'లాగ్ అవుట్', language: 'భాష', dashboard: 'డ్యాష్‌బోర్డ్', refresh: 'రిఫ్రెష్',
     search: 'వెతుకు', filter: 'ఫిల్టర్', clear: 'క్లియర్', close: 'మూసివేయి', cancel: 'రద్దు', save: 'సేవ్', saving: 'సేవ్ అవుతోంది...', loading: 'లోడ్ అవుతోంది...', back: 'వెనక్కి', backToDashboard: 'డ్యాష్‌బోర్డ్‌కి వెళ్ళు',
@@ -532,6 +556,12 @@ const te = {
 };
 
 const kn = {
+  chatbot: {
+    title: 'KMCH AI ತ್ಯಾಜ್ಯ ಸಹಾಯಕ', workerSub: 'ನೈರ್ಮಲ್ಯ ಧ್ವನಿ ಸಹಾಯಕ', staffSub: 'ಬಯೋಮೆಡಿಕಲ್ ತ್ಯಾಜ್ಯ & ಪ್ರೋಟೋಕಾಲ್', online: 'ಆನ್‌ಲೈನ್', voiceOn: 'ಧ್ವನಿ ಆನ್', voiceOff: 'ಧ್ವನಿ ಆಫ್', clear: 'ಸಂಭಾಷಣೆ ತೆರವುಗೊಳಿಸಿ',
+    speechLang: 'ಮಾತು & ಪಠ್ಯ ಭಾಷೆ:', recommended: 'ಶಿಫಾರಸು ಮಾಡಿದ ಪ್ರೋಟೋಕಾಲ್', match: 'ಹೊಂದಾಣಿಕೆ', disposal: 'ವಿಲೇವಾರಿ ಪ್ರೋಟೋಕಾಲ್', applied: 'ಫಾರ್ಮ್‌ಗೆ ಅನ್ವಯಿಸಲಾಗಿದೆ', apply: 'ವರ್ಗ & ತೊಟ್ಟಿಯನ್ನು ಫಾರ್ಮ್‌ಗೆ ಅನ್ವಯಿಸಿ',
+    listen: 'ಸಂದೇಶ ಕೇಳಿ', photo: 'ತ್ಯಾಜ್ಯದ ಫೋಟೋ ಅಪ್‌ಲೋಡ್ / ತೆಗೆಯಿರಿ', speak: 'ನಿಮ್ಮ ಭಾಷೆಯಲ್ಲಿ ಮಾತನಾಡಲು ಕ್ಲಿಕ್ ಮಾಡಿ', stopListening: 'ಕೇಳುವುದನ್ನು ನಿಲ್ಲಿಸಿ', send: 'ಕಳುಹಿಸಿ', attached: 'AI ಸ್ಕ್ಯಾನ್‌ಗೆ ಲಗತ್ತಿಸಿದ ಫೋಟೋ', stop: 'ನಿಲ್ಲಿಸಿ',
+    visionOff: 'ಫೋಟೋ ಸ್ಕ್ಯಾನ್ ಆಫ್ ಆಗಿದೆ — ಬ್ಯಾಕೆಂಡ್ .env ನಲ್ಲಿ GEMINI_API_KEY ಸೇರಿಸಿ. ಪಠ್ಯ & ಧ್ವನಿ ಎಂದಿನಂತೆ ಕೆಲಸ ಮಾಡುತ್ತವೆ.'
+  },
   common: {
     hospital: 'KMCH ಆಸ್ಪತ್ರೆ', brandSub: 'ವಿಶ್ಲೇಷಣೆ & ಆಡಿಟ್', systemLive: 'ಸಿಸ್ಟಮ್ ಕಾರ್ಯನಿರತ', mainMenu: 'ಮುಖ್ಯ ಮೆನು', logout: 'ಲಾಗ್ ಔಟ್', language: 'ಭಾಷೆ', dashboard: 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್', refresh: 'ರಿಫ್ರೆಶ್', search: 'ಹುಡುಕಿ',
     filter: 'ಫಿಲ್ಟರ್', clear: 'ತೆರವುಗೊಳಿಸಿ', close: 'ಮುಚ್ಚಿ', cancel: 'ರದ್ದು', save: 'ಉಳಿಸಿ', saving: 'ಉಳಿಸಲಾಗುತ್ತಿದೆ...', loading: 'ಲೋಡ್ ಆಗುತ್ತಿದೆ...', back: 'ಹಿಂದೆ', backToDashboard: 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ಗೆ ಹಿಂತಿರುಗಿ', actions: 'ಕ್ರಮಗಳು',
@@ -630,6 +660,12 @@ const kn = {
 };
 
 const ml = {
+  chatbot: {
+    title: 'KMCH AI മാലിന്യ സഹായി', workerSub: 'ശുചീകരണ വോയ്സ് സഹായി', staffSub: 'ബയോമെഡിക്കൽ മാലിന്യം & പ്രോട്ടോക്കോളുകൾ', online: 'ഓൺലൈൻ', voiceOn: 'വോയ്സ് ഓൺ', voiceOff: 'വോയ്സ് ഓഫ്', clear: 'സംഭാഷണം മായ്ക്കുക',
+    speechLang: 'സംസാരം & ടെക്സ്റ്റ് ഭാഷ:', recommended: 'ശുപാർശ ചെയ്ത പ്രോട്ടോക്കോൾ', match: 'പൊരുത്തം', disposal: 'നിർമാർജന പ്രോട്ടോക്കോൾ', applied: 'ഫോമിൽ പ്രയോഗിച്ചു', apply: 'വിഭാഗം & ബിൻ ഫോമിൽ പ്രയോഗിക്കുക',
+    listen: 'സന്ദേശം കേൾക്കുക', photo: 'മാലിന്യത്തിന്റെ ഫോട്ടോ അപ്‌ലോഡ് / എടുക്കുക', speak: 'നിങ്ങളുടെ ഭാഷയിൽ സംസാരിക്കാൻ ക്ലിക്ക് ചെയ്യുക', stopListening: 'കേൾക്കുന്നത് നിർത്തുക', send: 'അയയ്ക്കുക', attached: 'AI സ്കാനിനായി ചേർത്ത ഫോട്ടോ', stop: 'നിർത്തുക',
+    visionOff: 'ഫോട്ടോ സ്കാൻ ഓഫാണ് — ബാക്കെൻഡ് .env ൽ GEMINI_API_KEY ചേർക്കുക. ടെക്സ്റ്റും വോയ്സും സാധാരണപോലെ പ്രവർത്തിക്കും.'
+  },
   common: {
     hospital: 'KMCH ആശുപത്രി', brandSub: 'വിശകലനം & ഓഡിറ്റ്', systemLive: 'സിസ്റ്റം പ്രവർത്തനക്ഷമം', mainMenu: 'പ്രധാന മെനു', logout: 'ലോഗ് ഔട്ട്', language: 'ഭാഷ', dashboard: 'ഡാഷ്‌ബോർഡ്', refresh: 'പുതുക്കുക', search: 'തിരയുക',
     filter: 'ഫിൽറ്റർ', clear: 'മായ്ക്കുക', close: 'അടയ്ക്കുക', cancel: 'റദ്ദാക്കുക', save: 'സേവ്', saving: 'സേവ് ചെയ്യുന്നു...', loading: 'ലോഡ് ചെയ്യുന്നു...', back: 'പിന്നോട്ട്', backToDashboard: 'ഡാഷ്‌ബോർഡിലേക്ക് മടങ്ങുക', actions: 'നടപടികൾ',

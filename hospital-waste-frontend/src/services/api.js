@@ -95,9 +95,11 @@ export const api = {
   deleteWasteRecord: (id) => request(`/waste/${id}`, { method: 'DELETE' }),
 
   // AI vision (API key stays server-side)
-  classifyImage: (imageFile, signal) => {
+  getAiStatus: () => request('/ai/status'),
+  classifyImage: (imageFile, hint = '', signal) => {
     const formData = new FormData();
     formData.append('image', imageFile);
+    if (hint) formData.append('hint', hint);
     return request('/ai/classify-image', { method: 'POST', formData, signal });
   },
 

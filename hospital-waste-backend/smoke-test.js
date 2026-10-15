@@ -135,6 +135,21 @@ function expect(label, cond, extra) {
   const delRec = await call('DELETE', `/waste/${toCancel.data.record._id}`, { token: AT });
   expect('admin deletes record', delRec.status === 200, delRec.data);
 
+  const aiStatus = await call('GET', '/ai/status', { token: ST });
+  expect('AI status reports configuration', aiStatus.status === 200 && typeof aiStatus.data.configured === 'boolean', aiStatus.data);
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+  const form = new FormData();
+  form.append('image', new Blob([png], { type: 'image/png' }), 'test.png');
+  const classify = await fetch(BASE + '/ai/classify-image', { method: 'POST', headers: { Authorization: `Bearer ${ST}` }, body: form });
+  const classifyData = await classify.json().catch(() => null);
+  if (aiStatus.data.configured) {
+    expect('classify-image returns structured result', classify.status === 200 && Array.isArray(classifyData.items) && typeof classifyData.uncertain === 'boolean', classifyData);
+  } else {
+    expect('classify-image explains missing API key (no fake answer)', classify.status === 503 && classifyData.error === 'MISSING_API_KEY', classifyData);
+  }
+  const badUpload = await fetch(BASE + '/ai/classify-image', { method: 'POST', headers: { Authorization: `Bearer ${ST}`, 'Content-Type': 'application/json' }, body: '{}' });
+  expect('classify-image without image rejected', [400, 503].includes(badUpload.status), badUpload.status);
+
   console.log(failures === 0 ? '\nAll smoke tests passed.' : `\n${failures} smoke test(s) FAILED.`);
   process.exit(failures === 0 ? 0 : 1);
 })().catch(err => { console.error('Smoke test crashed:', err); process.exit(1); });

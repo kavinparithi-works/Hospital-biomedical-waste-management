@@ -129,6 +129,13 @@ Segregation compliance is computed from the statutory category→bin mapping (`u
 | `npm run build` | Production build to `dist/` |
 | `npm run preview` | Preview the production build |
 | `npm run lint` | oxlint |
+| `npm run test:nlp` | Chatbot classifier regression test (all languages; verifies photos are never guessed) |
+| `npm run test:ui` | Headless-Chrome end-to-end test of every page, role, language and the full workflow (needs both servers running) |
+
+### AI Waste Assistant
+
+- **Text & voice** classification runs fully in the browser (`src/services/nlpEngine.js`) — no API key needed.
+- **Photo** classification is done server-side by Gemini (`POST /api/ai/classify-image`). It requires `GEMINI_API_KEY` in the backend `.env`; without it the assistant says so and asks for a text description instead of guessing. Categories/bins returned by the model are validated against the BMW 2016 mapping on the server.
 
 Translations live in `src/i18n/translations.js`; add a language by adding an entry to `LANGUAGES` and a dictionary (missing keys fall back to English).
 

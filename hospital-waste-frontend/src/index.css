@@ -358,6 +358,16 @@ a:hover {
   transform: none;
 }
 
+/* Keyboard accessibility: clear focus ring on interactive elements */
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [role="button"]:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.45);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
 .cursor-pointer { cursor: pointer; }
 
 /* Stat cards (used on staff/admin dashboards) */

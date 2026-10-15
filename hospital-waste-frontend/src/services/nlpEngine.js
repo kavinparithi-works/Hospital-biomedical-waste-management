@@ -58,7 +58,7 @@ export const WASTE_KNOWLEDGE_BASE = [
   },
   {
     id: 'glassware',
-    category: 'General Waste',
+    category: 'Glassware & Metallic Implants',
     displayName: 'Glassware & Metallic Implants',
     bin: 'Blue',
     binFullName: 'Blue Cardboard Box / Bin with Blue Marking',
@@ -1072,10 +1072,10 @@ export function identifyWasteItem(lowerQuery, hasImage = false) {
     return { ...infectious, type: 'Infectious Waste', confidence: '98.0' };
   }
 
-  if (hasImage) {
-    const cat = WASTE_KNOWLEDGE_BASE[0];
-    return { ...cat, type: cat.category, confidence: '94.0' };
-  }
+  // Never invent a classification from a photo alone — the vision model (backend) is the only
+  // component that can see the image. Without a text description we return null so the UI can
+  // ask the user to describe the item instead of guessing.
+  void hasImage;
   return null;
 }
 

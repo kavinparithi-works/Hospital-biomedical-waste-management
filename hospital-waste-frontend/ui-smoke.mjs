@@ -150,8 +150,43 @@ try {
   if (!inHistory) problems.push('WORKFLOW: disposed record missing from worker history');
   console.log(`  ${inHistory ? 'ok  ' : 'FAIL'} record appears in collection history`);
 
-  console.log('\nRoute guard: staff visiting /admin should land on /staff');
+  console.log('\nChatbot: text classification and honest photo handling');
   await login('staff001', 'staff');
+  await goto(FRONT + '/staff/add-waste');
+  await evaluate(`(() => {
+    const input = [...document.querySelectorAll('input[type=text]')].find(i => /describe waste|Ask a doubt/i.test(i.placeholder));
+    const setVal = (el, v) => { Object.getOwnPropertyDescriptor(el.__proto__, 'value').set.call(el, v); el.dispatchEvent(new Event('input', { bubbles: true })); };
+    setVal(input, 'blood soaked cotton');
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    return 'sent';
+  })()`);
+  await sleep(1500);
+  const textResult = await evaluate(`(() => { const tags = [...document.querySelectorAll('.bin-tag')].map(e => e.innerText); return tags[tags.length - 1] || 'none'; })()`);
+  const textOk = /Yellow/i.test(textResult);
+  if (!textOk) problems.push(`CHATBOT: "blood soaked cotton" classified as ${textResult}, expected Yellow`);
+  console.log(`  ${textOk ? 'ok  ' : 'FAIL'} "blood soaked cotton" → ${textResult}`);
+
+  // Attach a photo with no description: must not invent a classification
+  const { writeFileSync } = await import('node:fs');
+  const pngPath = `${process.env.TEMP || '/tmp'}/ui-smoke-cotton.png`;
+  writeFileSync(pngPath, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64'));
+  await send('DOM.enable');
+  const doc = await send('DOM.getDocument', { depth: -1 });
+  const fileNode = await send('DOM.querySelector', { nodeId: doc.result.root.nodeId, selector: 'input[type=file]' });
+  await send('DOM.setFileInputFiles', { nodeId: fileNode.result.nodeId, files: [pngPath] });
+  await sleep(600);
+  const binsBefore = await evaluate(`document.querySelectorAll('.bin-tag').length`);
+  await evaluate(`(() => { const b = [...document.querySelectorAll('button')].find(x => x.title && /Send message/i.test(x.title)); b.click(); return 'clicked'; })()`);
+  await sleep(3500);
+  const photoInfo = await evaluate(`(() => {
+    const msgs = [...document.querySelectorAll('div')].map(d => d.innerText || '').filter(t => /Photo scanning|could not identify|found \\d+ item|Based on your description/i.test(t));
+    return { binsAfter: document.querySelectorAll('.bin-tag').length, replied: msgs.length > 0, sharps: /Sharps/.test(document.body.innerText.slice(-1500)) };
+  })()`);
+  const photoOk = photoInfo.replied && (photoInfo.binsAfter === binsBefore || !photoInfo.sharps);
+  if (!photoOk) problems.push(`CHATBOT: photo without description produced a guess (${JSON.stringify(photoInfo)})`);
+  console.log(`  ${photoOk ? 'ok  ' : 'FAIL'} photo without description → honest reply, no invented "Sharps" (${JSON.stringify(photoInfo)})`);
+
+  console.log('\nRoute guard: staff visiting /admin should land on /staff');
   await goto(FRONT + '/admin');
   const path = await evaluate('location.pathname');
   if (path !== '/staff') problems.push(`GUARD: expected /staff, got ${path}`);

@@ -12,6 +12,7 @@ import {
 } from '../services/nlpEngine';
 
 import { api } from '../services/api';
+import { useT } from '../i18n/LanguageContext';
 
 // Quick prompt suggestion pills across all languages
 const QUICK_PROMPTS_EN = [
@@ -68,6 +69,46 @@ const QUICK_PROMPTS_KN = [
   { label: '✂️ ಕತ್ತರಿ ಮತ್ತು ಬ್ಲೇಡ್', text: 'ಸರ್ಜಿಕಲ್ ಬ್ಲೇಡ್ ಮತ್ತು ಕತ್ತರಿಯನ್ನು ಎಲ್ಲಿ ಹಾಕಬೇಕು?' }
 ];
 
+// Messages used around photo classification, per language
+const VISION_TEXT = {
+  en: {
+    identified: (items) => `I analysed the photo and found ${items.length} item${items.length > 1 ? 's' : ''}:\n` + items.map(it => `• **${it.name}** → ${it.category} → **${it.bin} Bin** (${Math.round(it.confidence * 100)}%)`).join('\n'),
+    uncertain: (reason) => `I could not identify the waste in this photo with confidence. ${reason || ''}\nPlease describe the item in words (e.g. "blood-soaked cotton", "used needle") and I will classify it.`,
+    unavailable: (why) => `Photo scanning is unavailable right now: ${why}\nDescribe the item in words and I will classify it from your description.`,
+    fromText: 'Based on your description (the photo could not be analysed):'
+  },
+  ta: {
+    identified: (items) => `புகைப்படத்தில் ${items.length} பொருள்(கள்) கண்டறிந்தேன்:\n` + items.map(it => `• **${it.name}** → ${it.category} → **${it.bin} தொட்டி** (${Math.round(it.confidence * 100)}%)`).join('\n'),
+    uncertain: (reason) => `இந்தப் புகைப்படத்தில் கழிவை உறுதியாக அடையாளம் காண முடியவில்லை. ${reason || ''}\nபொருளை வார்த்தைகளில் விவரிக்கவும் (எ.கா. "ரத்தம் படிந்த பஞ்சு").`,
+    unavailable: (why) => `புகைப்பட ஸ்கேன் தற்போது கிடைக்கவில்லை: ${why}\nபொருளை வார்த்தைகளில் விவரிக்கவும்.`,
+    fromText: 'உங்கள் விவரத்தின் அடிப்படையில் (புகைப்படத்தை ஆய்வு செய்ய முடியவில்லை):'
+  },
+  hi: {
+    identified: (items) => `फ़ोटो में ${items.length} वस्तु(एँ) मिलीं:\n` + items.map(it => `• **${it.name}** → ${it.category} → **${it.bin} डिब्बा** (${Math.round(it.confidence * 100)}%)`).join('\n'),
+    uncertain: (reason) => `इस फ़ोटो में कचरे की पहचान निश्चित रूप से नहीं हो सकी। ${reason || ''}\nकृपया वस्तु का नाम लिखें (जैसे "खून लगी रुई")।`,
+    unavailable: (why) => `फ़ोटो स्कैन अभी उपलब्ध नहीं है: ${why}\nकृपया वस्तु का विवरण लिखें।`,
+    fromText: 'आपके विवरण के आधार पर (फ़ोटो का विश्लेषण नहीं हो सका):'
+  },
+  te: {
+    identified: (items) => `ఫోటోలో ${items.length} వస్తువు(లు) గుర్తించాను:\n` + items.map(it => `• **${it.name}** → ${it.category} → **${it.bin} తొట్టి** (${Math.round(it.confidence * 100)}%)`).join('\n'),
+    uncertain: (reason) => `ఈ ఫోటోలో వ్యర్థాన్ని ఖచ్చితంగా గుర్తించలేకపోయాను. ${reason || ''}\nదయచేసి వస్తువును మాటల్లో వివరించండి.`,
+    unavailable: (why) => `ఫోటో స్కాన్ ప్రస్తుతం అందుబాటులో లేదు: ${why}\nదయచేసి వస్తువును వివరించండి.`,
+    fromText: 'మీ వివరణ ఆధారంగా (ఫోటో విశ్లేషణ సాధ్యం కాలేదు):'
+  },
+  kn: {
+    identified: (items) => `ಫೋಟೋದಲ್ಲಿ ${items.length} ವಸ್ತು(ಗಳು) ಪತ್ತೆಯಾಗಿವೆ:\n` + items.map(it => `• **${it.name}** → ${it.category} → **${it.bin} ತೊಟ್ಟಿ** (${Math.round(it.confidence * 100)}%)`).join('\n'),
+    uncertain: (reason) => `ಈ ಫೋಟೋದಲ್ಲಿ ತ್ಯಾಜ್ಯವನ್ನು ಖಚಿತವಾಗಿ ಗುರುತಿಸಲಾಗಲಿಲ್ಲ. ${reason || ''}\nದಯವಿಟ್ಟು ವಸ್ತುವನ್ನು ಪದಗಳಲ್ಲಿ ವಿವರಿಸಿ.`,
+    unavailable: (why) => `ಫೋಟೋ ಸ್ಕ್ಯಾನ್ ಸದ್ಯ ಲಭ್ಯವಿಲ್ಲ: ${why}\nದಯವಿಟ್ಟು ವಸ್ತುವನ್ನು ವಿವರಿಸಿ.`,
+    fromText: 'ನಿಮ್ಮ ವಿವರಣೆಯ ಆಧಾರದ ಮೇಲೆ (ಫೋಟೋ ವಿಶ್ಲೇಷಿಸಲಾಗಲಿಲ್ಲ):'
+  },
+  ml: {
+    identified: (items) => `ഫോട്ടോയിൽ ${items.length} ഇനം(ങ്ങൾ) കണ്ടെത്തി:\n` + items.map(it => `• **${it.name}** → ${it.category} → **${it.bin} ബിൻ** (${Math.round(it.confidence * 100)}%)`).join('\n'),
+    uncertain: (reason) => `ഈ ഫോട്ടോയിലെ മാലിന്യം ഉറപ്പോടെ തിരിച്ചറിയാനായില്ല. ${reason || ''}\nദയവായി ഇനം വാക്കുകളിൽ വിവരിക്കുക.`,
+    unavailable: (why) => `ഫോട്ടോ സ്കാൻ ഇപ്പോൾ ലഭ്യമല്ല: ${why}\nദയവായി ഇനം വിവരിക്കുക.`,
+    fromText: 'നിങ്ങളുടെ വിവരണത്തെ അടിസ്ഥാനമാക്കി (ഫോട്ടോ വിശകലനം ചെയ്യാനായില്ല):'
+  }
+};
+
 const getWelcomeMessage = (langCode) => {
   switch (langCode) {
     case 'ta': return 'வணக்கம்! நான் உங்கள் KMCH AI மருத்துவ கழிவு உதவியாளர். கழிவை விவரிக்கவும், உங்கள் சந்தேகங்களை கேட்கவும், அல்லது மைக் பட்டனை அழுத்தி பேசலாம்.';
@@ -82,6 +123,7 @@ const getWelcomeMessage = (langCode) => {
 
 
 const WasteChatbot = ({ role = 'staff', lang = 'en', onSuggest }) => {
+  const t = useT();
   // Voice & Speech Recognition States
   const [selectedVoiceLang, setSelectedVoiceLang] = useState(lang === 'ta' ? 'ta-IN' : 'en-IN');
   const [isListening, setIsListening] = useState(false);
@@ -152,6 +194,14 @@ const WasteChatbot = ({ role = 'staff', lang = 'en', onSuggest }) => {
   const fileInputRef = useRef(null);
   const bottomRef = useRef(null);
   const recognitionRef = useRef(null);
+
+  // Whether the backend has a Gemini key for photo classification (null = unknown yet)
+  const [visionStatus, setVisionStatus] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    api.getAiStatus().then(s => { if (!cancelled) setVisionStatus(s); }).catch(() => { if (!cancelled) setVisionStatus({ configured: false }); });
+    return () => { cancelled = true; };
+  }, []);
 
   // Sync selected voice language when parent lang changes
   useEffect(() => {
@@ -290,42 +340,43 @@ const WasteChatbot = ({ role = 'staff', lang = 'en', onSuggest }) => {
     try {
       let aiText = '';
       let resultObj = null;
+      const activeLang = getActiveLangCode();
+      const vt = VISION_TEXT[activeLang] || VISION_TEXT.en;
 
       if (hasImage && imageToUpload) {
-        // Real Gemini 1.5 Flash Vision Classification
+        // Vision classification is done server-side (Gemini). We never guess from a photo locally.
         try {
-          const visionData = await api.classifyImage(imageToUpload);
+          const visionData = await api.classifyImage(imageToUpload, queryText);
           if (visionData.uncertain || !visionData.items || visionData.items.length === 0) {
-            aiText = lang === 'ta'
-              ? `புகைப்படத்தில் கழிவுப் பொருளைத் தெளிவாகக் கண்டறிய முடியவில்லை: ${visionData.reason || 'தயவுசெய்து மனித முறையில் உறுதிப்படுத்தவும்.'}`
-              : `I could not clearly verify waste item in this photo: ${visionData.reason || 'Please verify waste item manually.'}`;
+            aiText = vt.uncertain(visionData.reason);
           } else {
-            const topItem = visionData.items[0];
-            const confPct = Math.round((topItem.confidence || 0.95) * 100);
-            aiText = lang === 'ta'
-              ? `நான் இந்தப் புகைப்படத்தை **${topItem.name}** (${topItem.category}) எனக் கண்டறிந்துள்ளேன். KMCH விதிகளின்படி இது **${topItem.bin} தொட்டியில்** போடப்பட வேண்டும்.`
-              : `I have classified this image as **${topItem.name}** (${topItem.category}). Per KMCH segregation protocols, it belongs in the **${topItem.bin} Bin**.`;
-
+            const items = [...visionData.items].sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+            const topItem = items[0];
+            aiText = vt.identified(items);
+            if (topItem.binCorrectionReason) aiText += `\n\nℹ️ ${topItem.binCorrectionReason}`;
             resultObj = {
               type: topItem.category,
               category: topItem.category,
               bin: topItem.bin,
               binFullName: `${topItem.bin} Bin (${topItem.category})`,
-              confidence: confPct,
+              confidence: Math.round((topItem.confidence || 0) * 100),
               guidance: topItem.disposal || 'Dispose per standard Bio-Medical Waste rules.',
               safetyWarning: topItem.hazard_warning || '',
               ppe: topItem.ppe || ''
             };
           }
         } catch (visionErr) {
-          console.warn('Gemini vision API notice, using rule engine:', visionErr.message);
-          const activeLang = getActiveLangCode();
-          const nlpResponse = processChatMessage(queryText || 'blood cotton gauze', true, activeLang);
-          aiText = nlpResponse.text;
-          resultObj = nlpResponse.result;
+          // Explain honestly why the photo could not be analysed, then fall back to the text (if any)
+          const textFallback = queryText ? processChatMessage(queryText, false, activeLang) : null;
+          if (textFallback && textFallback.result) {
+            aiText = `${vt.fromText}\n\n${textFallback.text}`;
+            resultObj = textFallback.result;
+          } else {
+            aiText = vt.unavailable(visionErr.message || 'Unknown error');
+          }
+          if (visionErr.code === 'MISSING_API_KEY') setVisionStatus({ configured: false });
         }
       } else {
-        const activeLang = getActiveLangCode();
         const nlpResponse = processChatMessage(queryText, false, activeLang);
         aiText = nlpResponse.text;
         resultObj = nlpResponse.result;
@@ -444,13 +495,13 @@ const WasteChatbot = ({ role = 'staff', lang = 'en', onSuggest }) => {
           </div>
           <div>
             <div style={{ fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span>KMCH AI Waste Assistant</span>
+              <span>{t('chatbot.title')}</span>
               <span style={{ fontSize: '0.65rem', backgroundColor: 'rgba(255,255,255,0.25)', padding: '1px 6px', borderRadius: '10px' }}>
                 NLP & Voice
               </span>
             </div>
             <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.85)' }}>
-              {role === 'worker' ? 'Sanitation Floor Voice Helper' : 'Biomedical Waste & Protocols'} • Online
+              {role === 'worker' ? t('chatbot.workerSub') : t('chatbot.staffSub')} • {t('chatbot.online')}
             </div>
           </div>
         </div>
@@ -463,7 +514,7 @@ const WasteChatbot = ({ role = 'staff', lang = 'en', onSuggest }) => {
               if (voiceEnabled) stopSpeaking();
               setVoiceEnabled(!voiceEnabled);
             }}
-            title={voiceEnabled ? 'Mute AI voice output' : 'Read AI answers aloud'}
+            title={voiceEnabled ? t('chatbot.voiceOff') : t('chatbot.voiceOn')}
             style={{
               background: voiceEnabled ? '#22C55E' : 'rgba(255,255,255,0.2)',
               border: 'none',
@@ -478,13 +529,13 @@ const WasteChatbot = ({ role = 'staff', lang = 'en', onSuggest }) => {
             }}
           >
             {voiceEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
-            <span>{voiceEnabled ? 'Voice On' : 'Voice Off'}</span>
+            <span>{voiceEnabled ? t('chatbot.voiceOn') : t('chatbot.voiceOff')}</span>
           </button>
 
           {/* Reset / Clear */}
           <button
             onClick={handleReset}
-            title="Clear conversation"
+            title={t('chatbot.clear')}
             style={{
               background: 'rgba(255,255,255,0.2)',
               border: 'none',
@@ -498,7 +549,7 @@ const WasteChatbot = ({ role = 'staff', lang = 'en', onSuggest }) => {
               fontSize: '0.72rem'
             }}
           >
-            <RefreshCw size={12} /> Clear
+            <RefreshCw size={12} /> {t('common.clear')}
           </button>
         </div>
       </div>
@@ -515,7 +566,7 @@ const WasteChatbot = ({ role = 'staff', lang = 'en', onSuggest }) => {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#475569' }}>
           <Globe size={13} color="#0D9488" />
-          <span style={{ fontWeight: 600 }}>Speech & Text Language:</span>
+          <span style={{ fontWeight: 600 }}>{t('chatbot.speechLang')}</span>
         </div>
         <select
           value={selectedVoiceLang}
@@ -538,6 +589,14 @@ const WasteChatbot = ({ role = 'staff', lang = 'en', onSuggest }) => {
           ))}
         </select>
       </div>
+
+      {/* ─── Photo scan availability ───────────────────────── */}
+      {visionStatus && visionStatus.configured === false && (
+        <div style={{ backgroundColor: '#FFFBEB', color: '#92400E', fontSize: '0.74rem', padding: '0.4rem 0.8rem', borderBottom: '1px solid #FDE68A', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Camera size={13} />
+          <span>{t('chatbot.visionOff')}</span>
+        </div>
+      )}
 
       {/* ─── Speech Error Notice ───────────────────────────── */}
       {speechError && (
@@ -658,7 +717,7 @@ const WasteChatbot = ({ role = 'staff', lang = 'en', onSuggest }) => {
                         <div style={{ flex: 1 }}>{msg.text}</div>
                         <button
                           onClick={() => handleSpeakMessage(msg.id, msg.text)}
-                          title="Listen to message"
+                          title={t('chatbot.listen')}
                           style={{
                             background: 'none',
                             border: 'none',
@@ -687,7 +746,7 @@ const WasteChatbot = ({ role = 'staff', lang = 'en', onSuggest }) => {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.55rem' }}>
                         <span style={{ fontWeight: 700, color: '#0F766E', fontSize: '0.84rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
                           <CheckCircle size={14} color="#0D9488" />
-                          Recommended Protocol
+                          {t('chatbot.recommended')}
                         </span>
                         <span style={{
                           fontSize: '0.72rem',
@@ -697,7 +756,7 @@ const WasteChatbot = ({ role = 'staff', lang = 'en', onSuggest }) => {
                           borderRadius: '12px',
                           fontWeight: 600
                         }}>
-                          {msg.result.confidence}% Match
+                          {msg.result.confidence}% {t('chatbot.match')}
                         </span>
                       </div>
 
@@ -705,22 +764,22 @@ const WasteChatbot = ({ role = 'staff', lang = 'en', onSuggest }) => {
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.55rem' }}>
                         <div style={{ backgroundColor: '#fff', borderRadius: '8px', padding: '0.45rem 0.65rem', border: '1px solid #E2E8F0' }}>
                           <div style={{ fontSize: '0.68rem', color: '#64748B', textTransform: 'uppercase', marginBottom: '2px' }}>
-                            Category
+                            {t('common.category')}
                           </div>
                           <strong style={{ color: '#0F172A', fontSize: '0.83rem' }}>
-                            {msg.result.category || msg.result.type}
+                            {t('categories.' + (msg.result.category || msg.result.type)) === 'categories.' + (msg.result.category || msg.result.type) ? (msg.result.category || msg.result.type) : t('categories.' + (msg.result.category || msg.result.type))}
                           </strong>
                         </div>
 
                         <div style={{ backgroundColor: '#fff', borderRadius: '8px', padding: '0.45rem 0.65rem', border: '1px solid #E2E8F0' }}>
                           <div style={{ fontSize: '0.68rem', color: '#64748B', textTransform: 'uppercase', marginBottom: '2px' }}>
-                            Assigned Bin
+                            {t('common.assignedBin')}
                           </div>
                           <span
                             className={`bin-tag bin-${msg.result.bin.toLowerCase()}`}
                             style={{ fontSize: '0.78rem', padding: '3px 8px', display: 'inline-block' }}
                           >
-                            {msg.result.bin} Bin
+                            {t('bins.' + msg.result.bin)} {t('bins.bin')}
                           </span>
                         </div>
                       </div>
@@ -728,7 +787,7 @@ const WasteChatbot = ({ role = 'staff', lang = 'en', onSuggest }) => {
                       {/* Guidance */}
                       <div style={{ backgroundColor: '#fff', borderRadius: '8px', padding: '0.5rem 0.65rem', border: '1px solid #E2E8F0', marginBottom: '0.55rem' }}>
                         <div style={{ fontSize: '0.68rem', color: '#64748B', textTransform: 'uppercase', marginBottom: '2px' }}>
-                          Disposal Protocol
+                          {t('chatbot.disposal')}
                         </div>
                         <p style={{ margin: 0, color: '#334155', fontSize: '0.8rem', lineHeight: 1.4 }}>
                           {msg.result.guidance}
@@ -777,11 +836,11 @@ const WasteChatbot = ({ role = 'staff', lang = 'en', onSuggest }) => {
                         >
                           {(msg.applied || appliedRecordId === msg.id) ? (
                             <>
-                              <Check size={14} /> Applied to Waste Form
+                              <Check size={14} /> {t('chatbot.applied')}
                             </>
                           ) : (
                             <>
-                              <Sparkles size={14} /> Apply Category & Bin to Form
+                              <Sparkles size={14} /> {t('chatbot.apply')}
                             </>
                           )}
                         </button>
@@ -830,7 +889,7 @@ const WasteChatbot = ({ role = 'staff', lang = 'en', onSuggest }) => {
                 cursor: 'pointer'
               }}
             >
-              Stop
+              {t('chatbot.stop')}
             </button>
           </div>
         )}
@@ -925,7 +984,7 @@ const WasteChatbot = ({ role = 'staff', lang = 'en', onSuggest }) => {
             style={{ height: '42px', width: '42px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #CBD5E1' }}
           />
           <span style={{ fontSize: '0.75rem', color: '#475569', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {selectedImage?.name || 'Attached Photo for AI Scan'}
+            {selectedImage?.name || t('chatbot.attached')}
           </span>
           <button
             onClick={() => { setSelectedImage(null); setImagePreview(null); }}
@@ -954,7 +1013,7 @@ const WasteChatbot = ({ role = 'staff', lang = 'en', onSuggest }) => {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            title="Upload or take photo of waste"
+            title={t('chatbot.photo')}
             style={{
               width: '36px',
               height: '36px',
@@ -975,7 +1034,7 @@ const WasteChatbot = ({ role = 'staff', lang = 'en', onSuggest }) => {
           {/* Speech Recognition Mic Button */}
           <button
             onClick={startSpeechRecognition}
-            title={isListening ? 'Stop listening' : 'Click to speak in your language (Speech Recognition)'}
+            title={isListening ? t('chatbot.stopListening') : t('chatbot.speak')}
             style={{
               width: '36px',
               height: '36px',
@@ -1019,7 +1078,7 @@ const WasteChatbot = ({ role = 'staff', lang = 'en', onSuggest }) => {
           <button
             onClick={() => handleSend()}
             disabled={isTyping || (!inputText.trim() && !selectedImage)}
-            title="Send Message"
+            title={t('chatbot.send')}
             style={{
               width: '36px',
               height: '36px',
