@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KMCH BioWaste — Setup Guide</title>
+<title>KMCH BioWaste — Complete Setup & User Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -16,54 +16,70 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
-  body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.65; }
   code, pre, kbd { font-family: 'JetBrains Mono', Consolas, monospace; }
+  kbd { background: #F1F5F9; border: 1px solid #CBD5E1; border-bottom-width: 2px; border-radius: 6px; padding: .1rem .45rem; font-size: .8em; }
 
   /* Hero */
-  .hero { background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 55%, #0D9488 100%); color: #fff; padding: 4rem 1.5rem 5rem; text-align: center; position: relative; overflow: hidden; }
+  .hero { background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 55%, #0D9488 100%); color: #fff; padding: 4rem 1.5rem 5.5rem; text-align: center; position: relative; overflow: hidden; }
   .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 20% 20%, rgba(255,255,255,.12), transparent 40%), radial-gradient(circle at 80% 70%, rgba(45,212,191,.25), transparent 45%); }
   .hero > * { position: relative; }
   .hero .badge { display: inline-flex; align-items: center; gap: .5rem; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.25); padding: .4rem 1rem; border-radius: 999px; font-size: .8rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 1.25rem; backdrop-filter: blur(6px); }
   .hero h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800; letter-spacing: -.03em; line-height: 1.1; }
   .hero h1 span { color: #5EEAD4; }
-  .hero p { max-width: 640px; margin: 1rem auto 0; color: rgba(255,255,255,.82); font-size: 1.1rem; }
+  .hero p { max-width: 680px; margin: 1rem auto 0; color: rgba(255,255,255,.85); font-size: 1.1rem; }
   .hero .bins { display: flex; justify-content: center; gap: .6rem; margin-top: 1.75rem; flex-wrap: wrap; }
   .hero .bin { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-size: 1.3rem; box-shadow: 0 8px 20px rgba(0,0,0,.25); }
+  .hero .meta { display: flex; gap: 1.5rem; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap; font-size: .85rem; color: rgba(255,255,255,.8); }
+  .hero .meta b { color: #fff; }
 
   /* Layout */
-  .wrap { max-width: 1040px; margin: -3rem auto 4rem; padding: 0 1.25rem; }
+  .wrap { max-width: 1060px; margin: -3.25rem auto 4rem; padding: 0 1.25rem; }
   .card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow); padding: 2rem; margin-bottom: 1.75rem; }
+  .part-label { display: inline-block; font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--blue); margin-bottom: .35rem; }
 
-  /* Quick nav */
-  .toc { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .75rem; }
+  /* TOC */
+  .toc { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .75rem; }
   .toc a { display: flex; align-items: center; gap: .65rem; padding: .85rem 1rem; border-radius: 12px; border: 1px solid var(--border); text-decoration: none; color: var(--text); font-weight: 600; font-size: .9rem; transition: .15s; background: #fff; }
   .toc a:hover { border-color: var(--blue); background: var(--blue-light); transform: translateY(-1px); }
-  .toc .n { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-size: .8rem; font-weight: 800; color: #fff; background: var(--blue); flex-shrink: 0; }
+  .toc .n { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-size: .8rem; font-weight: 800; color: #fff; flex-shrink: 0; }
 
   /* Steps */
   .step-head { display: flex; align-items: center; gap: 1rem; margin-bottom: .5rem; }
-  .step-num { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; font-weight: 800; font-size: 1.25rem; color: #fff; flex-shrink: 0; box-shadow: 0 6px 16px -4px rgba(0,0,0,.3); }
-  .step-head h2 { font-size: 1.45rem; font-weight: 800; letter-spacing: -.02em; }
+  .step-num { width: 50px; height: 50px; border-radius: 14px; display: grid; place-items: center; font-weight: 800; font-size: 1.25rem; color: #fff; flex-shrink: 0; box-shadow: 0 6px 16px -4px rgba(0,0,0,.3); }
+  .step-head h2 { font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; }
   .step-head small { display: block; color: var(--muted); font-weight: 500; font-size: .9rem; }
   .c-blue { background: linear-gradient(135deg, #3B82F6, #1D4ED8); } .c-green { background: linear-gradient(135deg, #10B981, #047857); }
   .c-amber { background: linear-gradient(135deg, #F59E0B, #B45309); } .c-purple { background: linear-gradient(135deg, #8B5CF6, #6D28D9); }
   .c-teal { background: linear-gradient(135deg, #14B8A6, #0F766E); } .c-red { background: linear-gradient(135deg, #F43F5E, #BE123C); }
   .c-slate { background: linear-gradient(135deg, #64748B, #334155); } .c-pink { background: linear-gradient(135deg, #EC4899, #BE185D); }
+  .c-indigo { background: linear-gradient(135deg, #6366F1, #4338CA); } .c-cyan { background: linear-gradient(135deg, #06B6D4, #0E7490); }
 
-  h3 { font-size: 1.05rem; font-weight: 700; margin: 1.5rem 0 .6rem; display: flex; align-items: center; gap: .5rem; }
+  h3 { font-size: 1.1rem; font-weight: 800; margin: 1.75rem 0 .6rem; display: flex; align-items: center; gap: .5rem; color: #0F172A; }
+  h4 { font-size: .95rem; font-weight: 700; margin: 1.1rem 0 .4rem; color: #1E293B; }
   p { color: #334155; }
   ol.sub, ul.sub { margin: .5rem 0 .5rem 1.4rem; color: #334155; }
-  ol.sub li, ul.sub li { margin: .4rem 0; }
+  ol.sub li, ul.sub li { margin: .45rem 0; }
+  ol.sub ol, ol.sub ul { margin-top: .3rem; }
   a { color: var(--blue); font-weight: 600; }
+
+  /* Numbered click lists */
+  ol.clicks { list-style: none; counter-reset: c; margin: .75rem 0; }
+  ol.clicks li { counter-increment: c; display: flex; gap: .85rem; padding: .7rem .9rem; border-radius: 12px; background: #F8FAFC; border: 1px solid var(--border); margin: .4rem 0; align-items: flex-start; }
+  ol.clicks li::before { content: counter(c); width: 26px; height: 26px; border-radius: 50%; background: var(--blue); color: #fff; font-weight: 800; font-size: .8rem; display: grid; place-items: center; flex-shrink: 0; margin-top: .1rem; }
+  ol.clicks li > div { flex: 1; }
+  .btn-ui { display: inline-block; background: #238636; color: #fff; padding: .1rem .55rem; border-radius: 6px; font-weight: 700; font-size: .82em; border: 1px solid rgba(0,0,0,.2); }
+  .btn-ui.grey { background: #F6F8FA; color: #24292F; border-color: #D0D7DE; }
+  .btn-ui.blue { background: var(--blue); }
 
   /* Code blocks */
   .code { position: relative; background: #0B1220; color: #E2E8F0; border-radius: 12px; padding: 1rem 1.1rem; margin: .75rem 0; font-size: .86rem; overflow-x: auto; border: 1px solid #1E293B; }
-  .code .cmt { color: #64748B; } .code .ok { color: #5EEAD4; } .code .hl { color: #FDE68A; }
+  .code .cmt { color: #64748B; } .code .ok { color: #5EEAD4; } .code .hl { color: #FDE68A; } .code .err { color: #FCA5A5; }
   .code pre { white-space: pre; }
   .copy { position: absolute; top: .55rem; right: .55rem; background: #1E293B; color: #CBD5E1; border: 1px solid #334155; border-radius: 8px; padding: .3rem .65rem; font-size: .72rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: .15s; }
   .copy:hover { background: #334155; color: #fff; }
   .copy.done { background: var(--green); border-color: var(--green); color: #fff; }
-  .label { display: inline-block; font-size: .7rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: .2rem .55rem; border-radius: 6px; margin-bottom: .35rem; }
+  .label { display: inline-block; font-size: .7rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: .2rem .55rem; border-radius: 6px; margin: .5rem 0 .2rem; }
   .l-win { background: var(--blue-light); color: var(--blue-dark); } .l-mac { background: var(--purple-light); color: var(--purple); } .l-all { background: var(--green-light); color: var(--green); }
 
   /* Callouts */
@@ -77,28 +93,39 @@
 
   /* Tables */
   table { width: 100%; border-collapse: separate; border-spacing: 0; margin: .75rem 0; font-size: .9rem; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-  th { background: #F8FAFC; text-align: left; padding: .7rem .9rem; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); border-bottom: 1px solid var(--border); }
+  th { background: #F8FAFC; text-align: left; padding: .7rem .9rem; font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); border-bottom: 1px solid var(--border); }
   td { padding: .7rem .9rem; border-bottom: 1px solid #F1F5F9; vertical-align: top; }
   tr:last-child td { border-bottom: 0; }
-  td code { background: #F1F5F9; padding: .15rem .45rem; border-radius: 6px; font-size: .82rem; color: #0F172A; }
-  .pill { display: inline-block; padding: .15rem .6rem; border-radius: 999px; font-size: .75rem; font-weight: 700; }
+  td code { background: #F1F5F9; padding: .15rem .45rem; border-radius: 6px; font-size: .82rem; color: #0F172A; white-space: nowrap; }
+  .pill { display: inline-block; padding: .15rem .6rem; border-radius: 999px; font-size: .75rem; font-weight: 700; white-space: nowrap; }
   .p-blue { background: var(--blue-light); color: var(--blue-dark); } .p-green { background: var(--green-light); color: var(--green); }
-  .p-amber { background: var(--amber-light); color: var(--amber); } .p-red { background: var(--red-light); color: var(--red); }
+  .p-amber { background: var(--amber-light); color: var(--amber); } .p-red { background: var(--red-light); color: var(--red); } .p-grey { background: #F1F5F9; color: #475569; }
 
   /* Role cards */
-  .roles { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-top: 1rem; }
-  .role { border-radius: 16px; padding: 1.25rem; border: 1px solid var(--border); position: relative; overflow: hidden; }
+  .roles { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .role { border-radius: 16px; padding: 1.25rem; border: 1px solid var(--border); position: relative; overflow: hidden; background: #fff; }
   .role::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; }
   .role.admin::before { background: var(--blue); } .role.staff::before { background: var(--teal); } .role.worker::before { background: var(--amber); }
-  .role h4 { font-size: 1.05rem; font-weight: 800; margin-bottom: .35rem; display: flex; align-items: center; gap: .5rem; }
-  .role .cred { background: #0B1220; color: #E2E8F0; border-radius: 10px; padding: .6rem .8rem; font-family: 'JetBrains Mono', monospace; font-size: .82rem; margin: .6rem 0; }
-  .role .cred b { color: #5EEAD4; }
-  .role ul { margin: .4rem 0 0 1.1rem; font-size: .88rem; color: #334155; }
+  .role h4 { font-size: 1.1rem; font-weight: 800; margin: 0 0 .35rem; display: flex; align-items: center; gap: .5rem; }
+  .cred { background: #0B1220; color: #E2E8F0; border-radius: 10px; padding: .6rem .8rem; font-family: 'JetBrains Mono', monospace; font-size: .82rem; margin: .6rem 0; line-height: 1.7; }
+  .cred b { color: #5EEAD4; }
+
+  /* Feature blocks */
+  .feature { border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem 1.25rem; margin: .85rem 0; background: #fff; }
+  .feature h4 { margin: 0 0 .35rem; display: flex; align-items: center; gap: .5rem; font-size: 1rem; }
+  .feature .where { font-size: .78rem; color: var(--muted); font-weight: 600; margin-bottom: .5rem; }
+  .feature ul { margin: .3rem 0 0 1.2rem; font-size: .9rem; color: #334155; }
+  .feature li { margin: .3rem 0; }
+  .fa { border-left: 5px solid var(--blue); } .fs { border-left: 5px solid var(--teal); } .fw { border-left: 5px solid var(--amber); } .fg { border-left: 5px solid var(--purple); }
 
   /* Flow */
   .flow { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; justify-content: center; margin: 1rem 0; }
   .flow .st { padding: .55rem 1rem; border-radius: 999px; font-weight: 700; font-size: .85rem; border: 2px solid; }
   .flow .arrow { color: #94A3B8; font-size: 1.2rem; }
+
+  /* Bin table */
+  .binrow td:first-child { font-weight: 800; }
+  .dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; vertical-align: -2px; margin-right: .4rem; border: 1px solid rgba(0,0,0,.15); }
 
   /* Checklist */
   .check { list-style: none; margin: .75rem 0 0; }
@@ -106,27 +133,30 @@
   .check input { width: 18px; height: 18px; margin-top: .2rem; accent-color: var(--green); cursor: pointer; flex-shrink: 0; }
   .check li.done { background: var(--green-light); border-color: #A7F3D0; text-decoration: line-through; color: var(--muted); }
 
-  .tree { background: #0B1220; color: #CBD5E1; border-radius: 12px; padding: 1rem 1.2rem; font-size: .84rem; margin: .75rem 0; }
+  .tree { background: #0B1220; color: #CBD5E1; border-radius: 12px; padding: 1rem 1.2rem; font-size: .84rem; margin: .75rem 0; overflow-x: auto; }
   .tree .d { color: #5EEAD4; font-weight: 600; } .tree .f { color: #FDE68A; } .tree .c { color: #64748B; }
 
   details { border: 1px solid var(--border); border-radius: 12px; padding: .9rem 1.1rem; margin: .6rem 0; background: #fff; }
   summary { cursor: pointer; font-weight: 700; color: #0F172A; list-style: none; display: flex; align-items: center; gap: .6rem; }
   summary::before { content: '▸'; color: var(--blue); transition: .2s; }
   details[open] summary::before { transform: rotate(90deg); }
-  details p, details .code { margin-top: .7rem; }
+  details p, details .code, details ol, details ul { margin-top: .7rem; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
 
   footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 2rem 1rem 3rem; }
-  .top { position: fixed; right: 1.25rem; bottom: 1.25rem; background: var(--blue); color: #fff; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; text-decoration: none; box-shadow: 0 8px 20px rgba(37,99,235,.4); font-size: 1.2rem; }
-  @media (max-width: 640px) { .card { padding: 1.35rem; } .hero { padding: 3rem 1rem 4rem; } }
-  @media print { .copy, .top { display: none; } .hero { background: #1E3A8A !important; } }
+  .top { position: fixed; right: 1.25rem; bottom: 1.25rem; background: var(--blue); color: #fff; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; text-decoration: none; box-shadow: 0 8px 20px rgba(37,99,235,.4); font-size: 1.2rem; z-index: 10; }
+  @media (max-width: 640px) { .card { padding: 1.35rem; } .hero { padding: 3rem 1rem 4.5rem; } }
+  @media print { .copy, .top { display: none; } .hero { background: #1E3A8A !important; } details { break-inside: avoid; } details[open] summary::before { content: '' } }
 </style>
 </head>
 <body>
 
 <header class="hero">
-  <div class="badge">🏥 KMCH Hospital · Biomedical Waste Management</div>
-  <h1>Setup Guide — from <span>fork</span> to <span>running</span> in 10 minutes</h1>
-  <p>A friendly step-by-step walkthrough to get the whole project (backend + website) running on your own computer after forking it to your GitHub account.</p>
+  <div class="badge">🏥 KMCH Hospital · Biomedical Waste Management System</div>
+  <h1>Complete <span>Setup</span> &amp; <span>User</span> Guide</h1>
+  <p>Everything in one place: how to fork the project to your GitHub, what to install, how to run it, the login accounts, and what every button on the website does.</p>
   <div class="bins">
     <div class="bin" style="background:#F59E0B">🟡</div>
     <div class="bin" style="background:#EF4444">🔴</div>
@@ -134,390 +164,695 @@
     <div class="bin" style="background:#3B82F6">🔵</div>
     <div class="bin" style="background:#22C55E">🟢</div>
   </div>
+  <div class="meta">
+    <span>⏱️ Setup time: <b>≈ 15 minutes</b></span>
+    <span>💻 Works on <b>Windows &amp; Mac</b></span>
+    <span>🌐 <b>6 languages</b></span>
+    <span>👥 <b>3 roles</b>: Admin · Staff · Worker</span>
+  </div>
 </header>
 
 <main class="wrap">
 
-  <!-- TOC -->
+  <!-- ========================================================= TOC -->
   <section class="card">
-    <h3 style="margin-top:0">📍 What's in this guide</h3>
+    <h3 style="margin-top:0">📍 Contents</h3>
     <div class="toc">
-      <a href="#s1"><span class="n" style="background:#2563EB">1</span>Install the tools</a>
-      <a href="#s2"><span class="n" style="background:#059669">2</span>Fork &amp; download</a>
-      <a href="#s3"><span class="n" style="background:#D97706">3</span>Start the database</a>
-      <a href="#s4"><span class="n" style="background:#7C3AED">4</span>Start the backend</a>
-      <a href="#s5"><span class="n" style="background:#0D9488">5</span>Start the website</a>
-      <a href="#s6"><span class="n" style="background:#DC2626">6</span>Log in &amp; explore</a>
-      <a href="#s7"><span class="n" style="background:#475569">7</span>Daily use &amp; Git</a>
-      <a href="#s8"><span class="n" style="background:#BE185D">8</span>Troubleshooting</a>
+      <a href="#p0"><span class="n" style="background:#0F172A">0</span>What is this project?</a>
+      <a href="#p1"><span class="n" style="background:#2563EB">1</span>Install the tools</a>
+      <a href="#p2"><span class="n" style="background:#059669">2</span>Fork on GitHub</a>
+      <a href="#p3"><span class="n" style="background:#0E7490">3</span>Download (clone) it</a>
+      <a href="#p4"><span class="n" style="background:#D97706">4</span>Start the database</a>
+      <a href="#p5"><span class="n" style="background:#7C3AED">5</span>Start the backend</a>
+      <a href="#p6"><span class="n" style="background:#0D9488">6</span>Start the website</a>
+      <a href="#p7"><span class="n" style="background:#DC2626">7</span>Usernames &amp; passwords</a>
+      <a href="#p8"><span class="n" style="background:#4338CA">8</span>Website tour — every feature</a>
+      <a href="#p9"><span class="n" style="background:#475569">9</span>Daily use &amp; saving to GitHub</a>
+      <a href="#p10"><span class="n" style="background:#BE185D">10</span>Troubleshooting</a>
+      <a href="#p11"><span class="n" style="background:#0F766E">11</span>FAQ &amp; glossary</a>
     </div>
     <div class="note n-info" style="margin-top:1.25rem">
       <div class="ic">💡</div>
-      <div><strong>How to read the commands</strong>Each dark box is something you type in a terminal. Click <b>Copy</b>, paste it into your terminal, press <kbd>Enter</kbd>. Lines starting with <code>#</code> are just comments — don't type them.</div>
+      <div><strong>How to read this guide</strong>Dark boxes are commands you type into a terminal — click <b>Copy</b>, paste, press <kbd>Enter</kbd>. Lines starting with <code>#</code> are explanations, not commands (the Copy button skips them automatically). Green buttons like <span class="btn-ui">Create fork</span> show you exactly what to click on a website.</div>
     </div>
   </section>
 
-  <!-- STEP 1 -->
-  <section class="card" id="s1">
+  <!-- ========================================================= PART 0 -->
+  <section class="card" id="p0">
+    <span class="part-label">Part 0</span>
+    <div class="step-head">
+      <div class="step-num c-slate">0</div>
+      <div><h2>What is this project?</h2><small>Two minutes of context before you start</small></div>
+    </div>
+    <p>This is a complete web application for a hospital to track <b>biomedical waste</b> from the moment a nurse logs it to the moment a sanitation worker disposes of it — following India's <b>Bio-Medical Waste Management Rules 2016</b> (the colour-coded bin system). It has three kinds of users:</p>
+    <div class="roles">
+      <div class="role admin"><h4>🛡️ Admin</h4><p style="font-size:.9rem">Sees the whole hospital: analytics, compliance %, charts, every record, and manages all user accounts.</p></div>
+      <div class="role staff"><h4>🩺 Medical Staff</h4><p style="font-size:.9rem">Doctors/nurses who <b>log</b> waste in a ward, pick the right bin, and assign a worker to collect it.</p></div>
+      <div class="role worker"><h4>🚛 Sanitation Worker</h4><p style="font-size:.9rem">Collects the waste, <b>verifies the bag colour</b> matches the bin, and marks it disposed.</p></div>
+    </div>
+    <h3>🧩 The two programs that make it work</h3>
+    <div class="two">
+      <div class="feature fa"><h4>🖥️ Backend (API server)</h4><p style="font-size:.9rem">Folder <code>hospital-waste-backend</code>. Node.js + Express. Stores everything in a <b>MongoDB</b> database, handles logins, and is the only part that talks to the AI photo model. Runs on <b>port 5000</b>.</p></div>
+      <div class="feature fs"><h4>🌐 Frontend (the website)</h4><p style="font-size:.9rem">Folder <code>hospital-waste-frontend</code>. React + Vite. What you see in the browser. Talks to the backend. Runs on <b>port 5173</b>.</p></div>
+    </div>
+    <div class="note n-warn"><div class="ic">⚠️</div><div><strong>Both must be running at the same time</strong> — so you will keep <b>two terminal windows</b> open. That's normal.</div></div>
+  </section>
+
+  <!-- ========================================================= PART 1 -->
+  <section class="card" id="p1">
+    <span class="part-label">Part 1</span>
     <div class="step-head">
       <div class="step-num c-blue">1</div>
-      <div><h2>Install the tools (one time only)</h2><small>You need Git, Node.js and (optionally) Docker for MongoDB</small></div>
+      <div><h2>Install the tools (one time only)</h2><small>Git · Node.js · (optional) Docker · (optional) VS Code</small></div>
     </div>
 
     <table>
-      <tr><th>Tool</th><th>Why</th><th>Download</th><th>Check it works</th></tr>
-      <tr><td><b>Git</b></td><td>Download the code and push your changes</td><td><a href="https://git-scm.com/downloads" target="_blank">git-scm.com</a></td><td><code>git --version</code></td></tr>
-      <tr><td><b>Node.js 20+</b> (LTS)</td><td>Runs the backend and builds the website</td><td><a href="https://nodejs.org" target="_blank">nodejs.org</a> → "LTS"</td><td><code>node --version</code></td></tr>
-      <tr><td><b>Docker Desktop</b> <span class="pill p-amber">optional</span></td><td>Easiest way to run MongoDB (the database)</td><td><a href="https://www.docker.com/products/docker-desktop/" target="_blank">docker.com</a></td><td><code>docker --version</code></td></tr>
-      <tr><td><b>VS Code</b> <span class="pill p-amber">optional</span></td><td>Nice editor with a built-in terminal</td><td><a href="https://code.visualstudio.com" target="_blank">code.visualstudio.com</a></td><td>—</td></tr>
+      <tr><th>Tool</th><th>Needed?</th><th>Why</th><th>Download</th></tr>
+      <tr><td><b>Git</b></td><td><span class="pill p-red">Required</span></td><td>Downloads the code and lets you save changes back to GitHub</td><td><a href="https://git-scm.com/downloads" target="_blank">git-scm.com/downloads</a></td></tr>
+      <tr><td><b>Node.js 20 or newer (LTS)</b></td><td><span class="pill p-red">Required</span></td><td>Runs the backend server and builds the website</td><td><a href="https://nodejs.org" target="_blank">nodejs.org</a> → big green <b>LTS</b> button</td></tr>
+      <tr><td><b>Docker Desktop</b></td><td><span class="pill p-amber">Recommended</span></td><td>Easiest way to run the MongoDB database (one command). Skip if you'll use the no-install option in Part 4.</td><td><a href="https://www.docker.com/products/docker-desktop/" target="_blank">docker.com</a></td></tr>
+      <tr><td><b>VS Code</b></td><td><span class="pill p-grey">Optional</span></td><td>A code editor with a built-in terminal — makes everything easier</td><td><a href="https://code.visualstudio.com" target="_blank">code.visualstudio.com</a></td></tr>
+      <tr><td><b>Google Chrome / Edge</b></td><td><span class="pill p-grey">Optional</span></td><td>Best browser for the voice features of the AI assistant</td><td>Already on most computers</td></tr>
     </table>
 
-    <div class="note n-ok">
-      <div class="ic">✅</div>
-      <div><strong>No Docker? No MongoDB? No problem.</strong>Step 3 has a zero-install option (<code>npm run dev:memory</code>) that runs a temporary database automatically. Perfect for trying things out or demos.</div>
-    </div>
+    <h3>🪟 Windows — step by step</h3>
+    <ol class="clicks">
+      <li><div><b>Install Git.</b> Run the downloaded <code>Git-x.x.x-64-bit.exe</code>. Click <span class="btn-ui grey">Next</span> on every screen (the defaults are fine) → <span class="btn-ui grey">Install</span> → <span class="btn-ui grey">Finish</span>.</div></li>
+      <li><div><b>Install Node.js.</b> Run <code>node-v20.x.x-x64.msi</code>. Tick "I accept", keep clicking <span class="btn-ui grey">Next</span>. If it asks about "Tools for Native Modules", you can leave it unticked. → <span class="btn-ui grey">Install</span>.</div></li>
+      <li><div><b>Install Docker Desktop</b> (recommended). Run the installer, keep "Use WSL 2" ticked, restart the computer if asked, then open Docker Desktop once and wait until it says <i>Engine running</i> (bottom-left turns green).</div></li>
+      <li><div><b>Open a terminal:</b> press <kbd>Win</kbd>, type <b>PowerShell</b>, press <kbd>Enter</kbd>. (In VS Code: menu <b>Terminal → New Terminal</b>, or <kbd>Ctrl</kbd>+<kbd>`</kbd>.)</div></li>
+      <li><div><b>Check everything works</b> by pasting the commands below. Each should print a version number, not an error.</div></li>
+    </ol>
+    <span class="label l-win">Windows PowerShell</span>
+    <div class="code"><button class="copy">Copy</button><pre>git --version
+node --version
+npm --version
+docker --version   <span class="cmt"># only if you installed Docker</span></pre></div>
+    <div class="code"><pre><span class="cmt"># Expected output looks like this (numbers may differ):</span>
+<span class="ok">git version 2.45.1.windows.1
+v20.17.0
+10.8.2
+Docker version 27.1.1</span></pre></div>
 
-    <h3>🖥️ Opening a terminal</h3>
-    <ul class="sub">
-      <li><b>Windows:</b> press <kbd>Win</kbd>, type <b>PowerShell</b>, press Enter. (Or in VS Code: <kbd>Ctrl</kbd> + <kbd>`</kbd>)</li>
-      <li><b>Mac:</b> <kbd>Cmd</kbd> + <kbd>Space</kbd>, type <b>Terminal</b>, press Enter.</li>
-    </ul>
-  </section>
-
-  <!-- STEP 2 -->
-  <section class="card" id="s2">
-    <div class="step-head">
-      <div class="step-num c-green">2</div>
-      <div><h2>Fork the repo &amp; download it</h2><small>Get your own copy on GitHub, then clone it to your computer</small></div>
-    </div>
-
-    <h3>2.1 — Fork on GitHub</h3>
-    <ol class="sub">
-      <li>Open the repository page on GitHub (the one shared with you).</li>
-      <li>Click the <b>Fork</b> button (top-right) → <b>Create fork</b>.</li>
-      <li>You now have <code>https://github.com/<b>YOUR-USERNAME</b>/Hospital-biomedical-waste-management</code></li>
+    <h3>🍎 Mac — step by step</h3>
+    <ol class="clicks">
+      <li><div>Open <b>Terminal</b> (<kbd>Cmd</kbd>+<kbd>Space</kbd>, type <i>Terminal</i>, <kbd>Enter</kbd>).</div></li>
+      <li><div><b>Git:</b> type <code>git --version</code>. If macOS offers to install "Command Line Developer Tools", click <span class="btn-ui blue">Install</span>. Done.</div></li>
+      <li><div><b>Node.js:</b> download the macOS <b>LTS</b> <code>.pkg</code> from nodejs.org and double-click it, or if you have Homebrew: <code>brew install node@20</code>.</div></li>
+      <li><div><b>Docker Desktop:</b> download the Apple-Silicon or Intel version, drag to Applications, open it once.</div></li>
+      <li><div>Verify with the same commands as above.</div></li>
     </ol>
 
-    <h3>2.2 — Clone (download) to your computer</h3>
-    <p>Replace <code>YOUR-USERNAME</code> with your GitHub username:</p>
-    <div class="code"><button class="copy">Copy</button><pre><span class="cmt"># go to the folder where you keep projects, e.g. Documents</span>
+    <div class="note n-danger"><div class="ic">🔁</div><div><strong>Installed something but the terminal says "not recognized"?</strong>Close the terminal window completely and open a new one — a terminal only sees programs that existed when it was opened.</div></div>
+  </section>
+
+  <!-- ========================================================= PART 2 -->
+  <section class="card" id="p2">
+    <span class="part-label">Part 2</span>
+    <div class="step-head">
+      <div class="step-num c-green">2</div>
+      <div><h2>Fork the project on GitHub</h2><small>A "fork" is your own personal copy of the repository on your GitHub account</small></div>
+    </div>
+
+    <p>Forking means you get a copy that <b>you own</b>. You can change anything, push your changes, and it will never affect the original. Here is exactly what to click:</p>
+    <ol class="clicks">
+      <li><div>Go to <a href="https://github.com" target="_blank">github.com</a> and <b>sign in</b>. (No account? Click <span class="btn-ui grey">Sign up</span>, it's free — you'll need to confirm your email.)</div></li>
+      <li><div>Open the repository page you were given — the link looks like <code>https://github.com/<b>SOMEONE</b>/Hospital-biomedical-waste-management</code>.</div></li>
+      <li><div>In the <b>top-right</b> of the page, click the <span class="btn-ui grey">⑂ Fork</span> button. (If it shows a number next to it, that's just how many forks exist — click the word <b>Fork</b>.)</div></li>
+      <li><div>A page titled <b>"Create a new fork"</b> opens:
+        <ul class="sub">
+          <li><b>Owner:</b> leave it as your username.</li>
+          <li><b>Repository name:</b> leave as <code>Hospital-biomedical-waste-management</code>.</li>
+          <li><b>Copy the main branch only:</b> leave ticked.</li>
+        </ul></div></li>
+      <li><div>Click the green <span class="btn-ui">Create fork</span> button. GitHub works for a few seconds…</div></li>
+      <li><div>🎉 You land on <b>your</b> copy: <code>https://github.com/<span style="color:var(--amber)"><b>YOUR-USERNAME</b></span>/Hospital-biomedical-waste-management</code>. Notice the small grey text under the name that says "forked from …". <b>Bookmark this page.</b></div></li>
+    </ol>
+    <div class="note n-ok"><div class="ic">✅</div><div><strong>That's the fork done.</strong> Everything from now on happens on your computer. Keep your fork's URL handy — you'll need it in the next step.</div></div>
+  </section>
+
+  <!-- ========================================================= PART 3 -->
+  <section class="card" id="p3">
+    <span class="part-label">Part 3</span>
+    <div class="step-head">
+      <div class="step-num c-cyan">3</div>
+      <div><h2>Download (clone) your fork to your computer</h2><small>Three ways — pick the one you like. Method A is the standard one.</small></div>
+    </div>
+
+    <h3>🅰️ Method A — Git in the terminal (recommended)</h3>
+    <ol class="clicks">
+      <li><div>On your fork's page click the green <span class="btn-ui">&lt;&gt; Code</span> button → make sure <b>HTTPS</b> is selected → click the 📋 copy icon next to the URL.</div></li>
+      <li><div>In your terminal, go to the folder where you keep projects, then clone. Replace <code>YOUR-USERNAME</code>:</div></li>
+    </ol>
+    <div class="code"><button class="copy">Copy</button><pre><span class="cmt"># 1. go to your Documents folder (or anywhere you like)</span>
 cd Documents
 
-<span class="cmt"># download your fork</span>
+<span class="cmt"># 2. download your fork (this creates a new folder)</span>
 git clone https://github.com/<span class="hl">YOUR-USERNAME</span>/Hospital-biomedical-waste-management.git
 
-<span class="cmt"># go inside the project</span>
+<span class="cmt"># 3. move into the project folder</span>
 cd Hospital-biomedical-waste-management</pre></div>
+    <div class="code"><pre><span class="cmt"># You should see something like:</span>
+<span class="ok">Cloning into 'Hospital-biomedical-waste-management'...
+remote: Enumerating objects: 120, done.
+Receiving objects: 100% (120/120), done.</span></pre></div>
 
-    <h3>📁 What's inside</h3>
+    <h3>🅱️ Method B — GitHub Desktop (no typing)</h3>
+    <ol class="clicks">
+      <li><div>Install <a href="https://desktop.github.com" target="_blank">GitHub Desktop</a> and sign in.</div></li>
+      <li><div>Menu <b>File → Clone repository…</b> → tab <b>GitHub.com</b> → select <code>YOUR-USERNAME/Hospital-biomedical-waste-management</code>.</div></li>
+      <li><div>Choose a local path (e.g. Documents) → <span class="btn-ui blue">Clone</span>. When asked "How are you planning to use this fork?", choose <b>"For my own purposes"</b>.</div></li>
+      <li><div>Click <span class="btn-ui grey">Open in Visual Studio Code</span> (or open the folder in any terminal) and continue with Part 4.</div></li>
+    </ol>
+
+    <h3>🅲 Method C — Download ZIP (quickest, but no Git history)</h3>
+    <p>On your fork: <span class="btn-ui">&lt;&gt; Code</span> → <b>Download ZIP</b> → extract it. You can run the project, but you won't be able to push changes back without Git. Fine for just trying it out.</p>
+
+    <h3>📁 What's inside the folder</h3>
     <div class="tree"><pre><span class="d">Hospital-biomedical-waste-management/</span>
-├── <span class="d">hospital-waste-backend/</span>     <span class="c">← API server (Node.js + Express + MongoDB)</span>
-├── <span class="d">hospital-waste-frontend/</span>    <span class="c">← the website (React + Vite)</span>
-├── <span class="d">hospital-waste-dashboard/</span>   <span class="c">← old Flask prototype (not needed)</span>
-├── <span class="f">docker-compose.yml</span>          <span class="c">← starts MongoDB with one command</span>
-├── <span class="f">README.md</span>                   <span class="c">← technical reference</span>
-└── <span class="f">SETUP_GUIDE.html</span>            <span class="c">← this guide 🙂</span></pre></div>
-
-    <div class="note n-warn">
-      <div class="ic">⚠️</div>
-      <div><strong>You'll need TWO terminals running at the same time</strong>One for the backend (Step 4) and one for the website (Step 5). In VS Code click the <b>+</b> in the terminal panel to open another one.</div>
-    </div>
+├── <span class="d">hospital-waste-backend/</span>      <span class="c">← API server: Node.js + Express + MongoDB (port 5000)</span>
+│   ├── <span class="f">server.js</span>                 <span class="c">← starts the server, auto-creates demo users</span>
+│   ├── <span class="d">routes/</span>                   <span class="c">← auth, users, waste, notifications, ai</span>
+│   ├── <span class="d">models/</span>                   <span class="c">← database shapes (User, WasteRecord, Notification)</span>
+│   ├── <span class="f">.env.example</span>              <span class="c">← settings template → you copy it to .env</span>
+│   └── <span class="f">smoke-test.js</span>             <span class="c">← tests the whole API</span>
+├── <span class="d">hospital-waste-frontend/</span>     <span class="c">← the website: React + Vite (port 5173)</span>
+│   ├── <span class="d">src/pages/</span>                <span class="c">← Login, Admin, Staff, Worker screens</span>
+│   ├── <span class="d">src/i18n/translations.js</span>  <span class="c">← all 6 languages</span>
+│   └── <span class="f">ui-smoke.mjs</span>              <span class="c">← tests every page in a hidden browser</span>
+├── <span class="d">hospital-waste-dashboard/</span>    <span class="c">← OLD Flask prototype — ignore it</span>
+├── <span class="f">docker-compose.yml</span>           <span class="c">← starts MongoDB with one command</span>
+├── <span class="f">README.md</span>                    <span class="c">← technical reference</span>
+└── <span class="f">SETUP_GUIDE.html</span>             <span class="c">← this guide 🙂</span></pre></div>
   </section>
 
-  <!-- STEP 3 -->
-  <section class="card" id="s3">
+  <!-- ========================================================= PART 4 -->
+  <section class="card" id="p4">
+    <span class="part-label">Part 4</span>
     <div class="step-head">
-      <div class="step-num c-amber">3</div>
-      <div><h2>Start the database (MongoDB)</h2><small>Pick ONE of the three options — Option A is recommended</small></div>
+      <div class="step-num c-amber">4</div>
+      <div><h2>Start the database (MongoDB)</h2><small>The backend needs somewhere to store users and records. Choose ONE option.</small></div>
     </div>
 
-    <h3>🅰️ Option A — Docker (recommended, data is saved)</h3>
-    <p>Make sure Docker Desktop is open, then from the project folder:</p>
+    <table>
+      <tr><th>Option</th><th>Good for</th><th>Data kept after restart?</th><th>Needs install?</th></tr>
+      <tr><td><b>A — Docker</b> <span class="pill p-green">recommended</span></td><td>Normal daily use</td><td>✅ Yes</td><td>Docker Desktop</td></tr>
+      <tr><td><b>B — In-memory</b></td><td>Trying it out, demos, laptops without Docker</td><td>❌ No (resets each time)</td><td>Nothing</td></tr>
+      <tr><td><b>C — MongoDB installed locally</b></td><td>If you already have MongoDB</td><td>✅ Yes</td><td>MongoDB Community Server</td></tr>
+    </table>
+
+    <h3>🅰️ Option A — Docker</h3>
+    <ol class="clicks">
+      <li><div>Open <b>Docker Desktop</b> and wait until the whale icon / status says <i>Engine running</i>.</div></li>
+      <li><div>In a terminal, inside the <b>project root folder</b> (the one containing <code>docker-compose.yml</code>), run:</div></li>
+    </ol>
     <div class="code"><button class="copy">Copy</button><pre>docker compose up -d mongo</pre></div>
-    <p>That's it — MongoDB is now running in the background at <code>mongodb://127.0.0.1:27017</code>. It will keep your data between restarts.</p>
+    <div class="code"><pre><span class="cmt"># First time it downloads MongoDB (~700 MB), then:</span>
+<span class="ok">✔ Container biowaste-mongo  Started</span></pre></div>
+    <p>MongoDB now runs silently in the background at <code>mongodb://127.0.0.1:27017</code> and keeps your data in a Docker volume. It starts again automatically whenever Docker Desktop is open.</p>
 
     <h3>🅱️ Option B — No install, temporary database</h3>
-    <p>Skip this step entirely and in <b>Step 4</b> use <code>npm run dev:memory</code> instead of <code>npm run dev</code>. A throwaway MongoDB starts automatically (first run downloads ~600 MB once).</p>
-    <div class="note n-warn"><div class="ic">🧹</div><div><strong>Data disappears when you stop the backend</strong> with Option B. Great for demos and testing; use Option A or C if you want records to persist.</div></div>
+    <p>Do nothing now. In <b>Part 5</b>, start the backend with <code>npm run dev:memory</code> instead of <code>npm run dev</code>. A temporary MongoDB is downloaded once (~600 MB) and started for you.</p>
+    <div class="note n-warn"><div class="ic">🧹</div><div><strong>Everything resets when you stop the backend</strong> in Option B — the demo users and sample records are recreated fresh every start. Perfect for demos; use A or C for real use.</div></div>
 
-    <h3>🅲 Option C — MongoDB installed locally</h3>
-    <p>Install <a href="https://www.mongodb.com/try/download/community" target="_blank">MongoDB Community Server</a> and make sure the service is running. Nothing else to change — the default connection string already points to it.</p>
+    <h3>🅲 Option C — Local MongoDB</h3>
+    <p>Install <a href="https://www.mongodb.com/try/download/community" target="_blank">MongoDB Community Server</a> (keep "Install MongoDB as a Service" ticked on Windows). The default address matches what the backend expects — nothing to change.</p>
   </section>
 
-  <!-- STEP 4 -->
-  <section class="card" id="s4">
+  <!-- ========================================================= PART 5 -->
+  <section class="card" id="p5">
+    <span class="part-label">Part 5</span>
     <div class="step-head">
-      <div class="step-num c-purple">4</div>
-      <div><h2>Start the backend (API server)</h2><small>Terminal #1 — leave it running</small></div>
+      <div class="step-num c-purple">5</div>
+      <div><h2>Start the backend (API server)</h2><small>Terminal window #1 — keep it open the whole time</small></div>
     </div>
 
-    <h3>4.1 — Go into the backend folder &amp; install packages</h3>
-    <div class="code"><button class="copy">Copy</button><pre>cd hospital-waste-backend
+    <h3>5.1 — Go into the backend folder and install its packages</h3>
+    <div class="code"><button class="copy">Copy</button><pre><span class="cmt"># from the project root folder</span>
+cd hospital-waste-backend
 npm install</pre></div>
+    <p><code>npm install</code> downloads the libraries the server needs into a <code>node_modules</code> folder. It takes 1–2 minutes the first time. Warnings about "funding" are normal.</p>
 
-    <h3>4.2 — Create your <code>.env</code> settings file</h3>
+    <h3>5.2 — Create the settings file (<code>.env</code>)</h3>
+    <p>The backend reads its settings from a file called <code>.env</code>. A template is provided — copy it:</p>
     <span class="label l-win">Windows PowerShell</span>
     <div class="code"><button class="copy">Copy</button><pre>Copy-Item .env.example .env</pre></div>
     <span class="label l-mac">Mac / Linux</span>
     <div class="code"><button class="copy">Copy</button><pre>cp .env.example .env</pre></div>
+    <p style="margin-top:.75rem">Now open <code>hospital-waste-backend/.env</code> in Notepad / VS Code. Every line explained:</p>
+    <table>
+      <tr><th>Line</th><th>What it means</th><th>Do I need to change it?</th></tr>
+      <tr><td><code>MONGO_URI=mongodb://127.0.0.1:27017/biowaste_db</code></td><td>Where the database is</td><td><b>No</b> for Options A/B/C. Only change for MongoDB Atlas (cloud).</td></tr>
+      <tr><td><code>PORT=5000</code></td><td>Port the API listens on</td><td>No (unless 5000 is busy)</td></tr>
+      <tr><td><code>TZ=Asia/Kolkata</code></td><td>Hospital time zone — "today" is calculated in IST</td><td>No</td></tr>
+      <tr><td><code>JWT_SECRET=…</code></td><td>Secret used to sign login sessions</td><td><span class="pill p-red">YES</span> — type any long random sentence, e.g. <code>kmch-biowaste-2026-my-secret-phrase-8831</code></td></tr>
+      <tr><td><code>JWT_EXPIRES_IN=12h</code></td><td>How long a login lasts before re-login</td><td>No</td></tr>
+      <tr><td><code>CORS_ORIGIN=</code></td><td>Which website addresses may call the API (empty = any, fine for local use)</td><td>No (set when deploying online)</td></tr>
+      <tr><td><code>GEMINI_API_KEY=…</code></td><td>Enables <b>photo</b> identification in the AI assistant</td><td><span class="pill p-amber">Optional</span> — free key from <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a>. Text &amp; voice work without it.</td></tr>
+      <tr><td><code>GEMINI_MODEL=gemini-2.5-flash</code></td><td>Which Google model analyses photos</td><td>No</td></tr>
+    </table>
 
-    <p style="margin-top:.75rem">Open <code>.env</code> in any editor. It looks like this — the only line you <b>must</b> change is <code>JWT_SECRET</code> (type any long random text):</p>
-    <div class="code"><button class="copy">Copy</button><pre>MONGO_URI=mongodb://127.0.0.1:27017/biowaste_db
-PORT=5000
-TZ=Asia/Kolkata
-
-<span class="cmt"># Change this to any long random sentence — it signs login tokens</span>
-JWT_SECRET=<span class="hl">my-super-secret-kmch-key-2026-change-me</span>
-JWT_EXPIRES_IN=12h
-
-CORS_ORIGIN=
-
-<span class="cmt"># Optional: enables photo-based waste identification in the AI assistant</span>
-<span class="cmt"># Free key: https://aistudio.google.com/app/apikey</span>
-GEMINI_API_KEY=your_gemini_api_key_here
-GEMINI_MODEL=gemini-2.5-flash</pre></div>
-
-    <h3>4.3 — Start it</h3>
-    <span class="label l-all">If you used Option A or C (real MongoDB)</span>
+    <h3>5.3 — Start it</h3>
+    <span class="label l-all">Option A or C (real MongoDB)</span>
     <div class="code"><button class="copy">Copy</button><pre>npm run dev</pre></div>
-    <span class="label l-all">If you chose Option B (no database installed)</span>
+    <span class="label l-all">Option B (no database installed)</span>
     <div class="code"><button class="copy">Copy</button><pre>npm run dev:memory</pre></div>
-
-    <p style="margin-top:.75rem">You should see this — the demo users and sample records are created automatically on first start:</p>
+    <p style="margin-top:.75rem">You should see this. On the <b>first</b> start it creates 151 demo users and 8 sample records automatically:</p>
     <div class="code"><pre><span class="ok">Connected to MongoDB at mongodb://127.0.0.1:27017/biowaste_db</span>
 Seeding 150 users (Admin, 75 Staff, 75 Workers)...
 Seeded 151 new users successfully!
+Seeding sample waste records for current week (Mon-Sun)...
 Sample weekly waste records seeded successfully!
 <span class="ok">Backend server is running on http://localhost:5000</span></pre></div>
+    <div class="note n-ok"><div class="ic">🧪</div><div><strong>Check it:</strong> open <a href="http://localhost:5000/api/health" target="_blank">http://localhost:5000/api/health</a> in your browser. You should see <code>{"status":"ok", …, "database":"connected"}</code>. Leave this terminal running.</div></div>
 
-    <div class="note n-ok"><div class="ic">🧪</div><div><strong>Quick check:</strong> open <a href="http://localhost:5000/api/health" target="_blank">http://localhost:5000/api/health</a> in your browser. You should see <code>{"status":"ok", ... "database":"connected"}</code>.</div></div>
-
-    <details><summary>Optional: add 6 weeks of history so the admin charts look full</summary>
+    <details><summary>Optional: add 6 weeks of sample history so the admin charts look full</summary>
       <p>Open a <b>new</b> terminal (keep the backend running) and run:</p>
       <div class="code"><button class="copy">Copy</button><pre>cd hospital-waste-backend
 npm run seed:history</pre></div>
-      <p><i>(Only works with a real MongoDB — Option A or C.)</i></p>
+      <p>Adds ~130 realistic past records (Options A/C only — in-memory data resets).</p>
     </details>
   </section>
 
-  <!-- STEP 5 -->
-  <section class="card" id="s5">
+  <!-- ========================================================= PART 6 -->
+  <section class="card" id="p6">
+    <span class="part-label">Part 6</span>
     <div class="step-head">
-      <div class="step-num c-teal">5</div>
-      <div><h2>Start the website (frontend)</h2><small>Terminal #2 — open a new terminal, leave the backend running</small></div>
+      <div class="step-num c-teal">6</div>
+      <div><h2>Start the website (frontend)</h2><small>Terminal window #2 — open a NEW terminal, leave the backend running in the first one</small></div>
     </div>
-
+    <p><b>How to open a second terminal:</b> in VS Code click the <b>+</b> icon in the terminal panel; in PowerShell just open PowerShell again from the Start menu; on Mac press <kbd>Cmd</kbd>+<kbd>T</kbd> in Terminal.</p>
     <div class="code"><button class="copy">Copy</button><pre><span class="cmt"># from the project root folder</span>
 cd hospital-waste-frontend
 npm install
 npm run dev</pre></div>
-
-    <p>You'll see:</p>
     <div class="code"><pre>  VITE v8  ready in 480 ms
   ➜  Local:   <span class="ok">http://localhost:5173/</span></pre></div>
-
-    <div class="note n-ok" style="font-size:1rem"><div class="ic">🎉</div><div><strong>Open <a href="http://localhost:5173" target="_blank">http://localhost:5173</a> in your browser — the app is live!</strong>The website talks to the backend on port 5000 automatically. No extra configuration needed.</div></div>
-
-    <details><summary>Backend running on a different computer or port?</summary>
-      <p>Copy <code>.env.example</code> to <code>.env</code> inside <code>hospital-waste-frontend</code> and set <code>VITE_API_URL=http://THE-ADDRESS:5000/api</code>, then restart <code>npm run dev</code>.</p>
+    <div class="note n-ok" style="font-size:1rem"><div class="ic">🎉</div><div><strong>Open <a href="http://localhost:5173" target="_blank">http://localhost:5173</a> — the app is live!</strong>The website automatically talks to the backend on port 5000. Nothing else to configure.</div></div>
+    <details><summary>Backend on a different port or another computer?</summary>
+      <p>Copy <code>hospital-waste-frontend/.env.example</code> to <code>.env</code> and set <code>VITE_API_URL=http://ADDRESS:PORT/api</code>. Restart <code>npm run dev</code>.</p>
     </details>
   </section>
 
-  <!-- STEP 6 -->
-  <section class="card" id="s6">
+  <!-- ========================================================= PART 7 -->
+  <section class="card" id="p7">
+    <span class="part-label">Part 7</span>
     <div class="step-head">
-      <div class="step-num c-red">6</div>
-      <div><h2>Log in &amp; explore</h2><small>Three roles, all with the same password: <code>Password123</code></small></div>
+      <div class="step-num c-red">7</div>
+      <div><h2>Usernames &amp; passwords</h2><small>All demo accounts are created automatically the first time the backend starts</small></div>
     </div>
 
-    <p>On the login page, first click a <b>role card</b>, then enter the username and password. (In development mode the credentials are also shown on the page as a hint.)</p>
+    <div class="note n-info"><div class="ic">🔑</div><div><strong>Every demo account uses the same password: <code>Password123</code></strong> (capital P, no spaces). You can log in with the <b>username</b> or the <b>email</b>.</div></div>
 
-    <div class="roles">
-      <div class="role admin">
-        <h4>🛡️ Admin</h4>
-        <div class="cred">user: <b>adminname</b><br>pass: <b>Password123</b></div>
-        <ul>
-          <li>Executive dashboard — daily volume, compliance %, turnaround, backlog</li>
-          <li>Weekly chart + bin-colour breakdown, date picker for any day</li>
-          <li>User Management — add / edit / deactivate / delete staff &amp; workers</li>
-          <li>Export audit CSV, delete records, change own password</li>
-        </ul>
-      </div>
-      <div class="role staff">
-        <h4>🩺 Medical Staff</h4>
-        <div class="cred">user: <b>staff001</b> <span style="color:#94A3B8">(…staff075)</span><br>pass: <b>Password123</b></div>
-        <ul>
-          <li><b>Add Waste Record</b> — room, category, weight, bin, assign a worker</li>
-          <li>Bin is auto-suggested per BMW Rules 2016; warns on mismatch</li>
-          <li>Send reminders to workers, cancel wrong entries</li>
-          <li>AI Waste Assistant (text, voice, photo*) · History + CSV export</li>
-        </ul>
-      </div>
-      <div class="role worker">
-        <h4>🚛 Sanitation Worker</h4>
-        <div class="cred">user: <b>worker001</b> <span style="color:#94A3B8">(…worker075)</span><br>pass: <b>Password123</b></div>
-        <ul>
-          <li>See tasks assigned to you, overdue alerts, notifications 🔔</li>
-          <li><b>Collect</b> → verify bag colour matches bin → <b>Dispose</b></li>
-          <li>Report a colour mismatch with a note</li>
-          <li>Collection history + CSV export, profile &amp; password</li>
-        </ul>
-      </div>
+    <table>
+      <tr><th>Role</th><th>Username</th><th>Email (also works)</th><th>Password</th><th>Notes</th></tr>
+      <tr><td><span class="pill p-blue">Admin</span></td><td><code>adminname</code></td><td><code>admin@hospital.com</code></td><td><code>Password123</code></td><td>Only one admin. Cannot be deleted or deactivated.</td></tr>
+      <tr><td><span class="pill p-green">Staff</span></td><td><code>staff001</code> … <code>staff075</code></td><td><code>staff001@hospital.com</code> …</td><td><code>Password123</code></td><td>75 accounts, spread across Emergency, ICU, Pediatrics, Surgery, General Ward, Oncology, Cardiology, Radiology</td></tr>
+      <tr><td><span class="pill p-amber">Worker</span></td><td><code>worker001</code> … <code>worker075</code></td><td><code>worker001@hospital.com</code> …</td><td><code>Password123</code></td><td>75 accounts in Logistics, Sanitation, Waste Mgt, Environmental Care</td></tr>
+    </table>
+
+    <h3>🔒 Accounts that are intentionally deactivated</h3>
+    <p>To demonstrate the "deactivate account" feature, some demo users are created as <b>inactive</b> and <b>cannot log in</b> until an admin activates them:</p>
+    <ul class="sub">
+      <li>Every <b>10th staff</b>: <code>staff010</code>, <code>staff020</code>, <code>staff030</code> … <code>staff070</code></li>
+      <li>Every <b>12th worker</b>: <code>worker012</code>, <code>worker024</code>, <code>worker036</code>, <code>worker048</code>, <code>worker060</code>, <code>worker072</code></li>
+    </ul>
+    <p>Trying to log in with one shows <i>"This account has been deactivated. Please contact the administrator."</i> — that is correct behaviour, not a bug.</p>
+
+    <h3>🔐 How to log in</h3>
+    <ol class="clicks">
+      <li><div>On the login page, pick a language from the dropdown at the top-right if you want (optional).</div></li>
+      <li><div>Click one of the three <b>role cards</b>: <b>Admin Login</b>, <b>Medical Staff Login</b> or <b>Worker Login</b>. <i>The role must match the account</i> — <code>worker001</code> won't work under "Admin Login".</div></li>
+      <li><div>Type the username and password (the 👁 icon shows the password). In development mode the correct demo credentials are also displayed in a blue hint box on this screen.</div></li>
+      <li><div>Click <span class="btn-ui blue">Login to Dashboard</span>. Your session lasts 12 hours; <b>Log out</b> is at the bottom of the left sidebar.</div></li>
+    </ol>
+
+    <h3>👤 Creating your own accounts</h3>
+    <p>Log in as <b>admin</b> → <b>User Management</b> → <span class="btn-ui blue">+ Add New User</span>. Fill name, email (used as the username), password (min 6 characters), phone, department, role → <b>Add User</b>. The person can log in immediately. Everyone can change their own password later from <b>My Profile</b>.</p>
+  </section>
+
+  <!-- ========================================================= PART 8 -->
+  <section class="card" id="p8">
+    <span class="part-label">Part 8</span>
+    <div class="step-head">
+      <div class="step-num c-indigo">8</div>
+      <div><h2>Website tour — what every page and button does</h2><small>Read the section for the role you're using</small></div>
     </div>
-    <p style="font-size:.82rem;color:var(--muted);margin-top:.6rem">* Photo identification needs a free <code>GEMINI_API_KEY</code> in the backend <code>.env</code>. Text and voice work without it.</p>
 
-    <div class="note n-warn"><div class="ic">🔒</div><div><strong>Some demo accounts are intentionally inactive</strong> (every 10th staff like <code>staff010</code>, every 12th worker like <code>worker012</code>) to demonstrate the "deactivated account" feature. They cannot log in until an admin activates them.</div></div>
-
-    <h3>🔁 The waste workflow</h3>
+    <h3>🔁 The big picture: life of one waste record</h3>
     <div class="flow">
-      <span class="st" style="border-color:#F59E0B;color:#B45309;background:#FFFBEB">Staff logs record</span><span class="arrow">→</span>
-      <span class="st" style="border-color:#2563EB;color:#1D4ED8;background:#EFF6FF">Worker collects</span><span class="arrow">→</span>
-      <span class="st" style="border-color:#7C3AED;color:#6D28D9;background:#F5F3FF">Verifies bin colour</span><span class="arrow">→</span>
-      <span class="st" style="border-color:#059669;color:#047857;background:#ECFDF5">Disposed ✓</span>
+      <span class="st" style="border-color:#F59E0B;color:#B45309;background:#FFFBEB">1. Staff logs it<br><small>status: Assigned</small></span><span class="arrow">→</span>
+      <span class="st" style="border-color:#2563EB;color:#1D4ED8;background:#EFF6FF">2. Worker collects<br><small>status: Collected</small></span><span class="arrow">→</span>
+      <span class="st" style="border-color:#7C3AED;color:#6D28D9;background:#F5F3FF">3. Worker verifies bag colour</span><span class="arrow">→</span>
+      <span class="st" style="border-color:#059669;color:#047857;background:#ECFDF5">4. Disposed<br><small>status: Completed</small></span>
     </div>
-    <p style="text-align:center;font-size:.88rem;color:var(--muted)">Staff can <b>Cancel</b> a record any time before it is collected. Admin sees everything.</p>
+    <p style="text-align:center;font-size:.88rem;color:var(--muted)">Staff can <b>Cancel</b> a record any time before step 2. Admin watches everything and can delete records.</p>
 
-    <h3>🌐 Change the language</h3>
-    <p>Use the language dropdown on the <b>login page</b> (top-right) or in the <b>sidebar</b> (bottom). Available: English · தமிழ் · हिन्दी · తెలుగు · ಕನ್ನಡ · മലയാളം. Your choice is remembered.</p>
+    <h3>🗑️ The five bins (BMW Rules 2016) — the app enforces these</h3>
+    <table>
+      <tr><th>Bin colour</th><th>Waste category in the app</th><th>Examples</th></tr>
+      <tr class="binrow"><td><span class="dot" style="background:#F59E0B"></span>Yellow</td><td>Infectious Waste · Chemical Waste</td><td>Blood-soaked cotton/gauze/dressings, soiled linen, body tissue, placenta, expired medicines, lab waste</td></tr>
+      <tr class="binrow"><td><span class="dot" style="background:#EF4444"></span>Red</td><td>Contaminated Recyclable</td><td>Gloves, IV sets &amp; bottles, catheters, urine bags, syringes <i>without</i> needle, plastic tubing</td></tr>
+      <tr class="binrow"><td><span class="dot" style="background:#F8FAFC"></span>White</td><td>Sharps</td><td>Needles, syringes <i>with</i> needle, scalpels, blades, lancets, suture needles</td></tr>
+      <tr class="binrow"><td><span class="dot" style="background:#3B82F6"></span>Blue</td><td>Glassware &amp; Metallic Implants</td><td>Glass vials, ampoules, slides, broken glass, orthopaedic implants</td></tr>
+      <tr class="binrow"><td><span class="dot" style="background:#22C55E"></span>Green</td><td>General Waste</td><td>Food packaging, paper, uncontaminated wrappers</td></tr>
+    </table>
+    <p style="font-size:.88rem">If staff pick a bin that doesn't match the category, the form warns them and the record is flagged <b>"Review Required"</b> — this is what drives the compliance percentage.</p>
 
-    <h3>✨ Try this 2-minute tour</h3>
+    <h3>🧭 Things every role has</h3>
+    <div class="feature fg">
+      <h4>Left sidebar</h4>
+      <ul>
+        <li><b>Menu links</b> for your role's pages (highlighted when active).</li>
+        <li><b>Language dropdown</b> — English, தமிழ், हिन्दी, తెలుగు, ಕನ್ನಡ, മലയാളം. Changes the entire interface instantly and is remembered.</li>
+        <li><b>Your name &amp; role</b>, and the <b>Log out</b> button.</li>
+        <li>On phones/tablets the sidebar becomes a <b>☰ Menu</b> button at the top.</li>
+      </ul>
+    </div>
+    <div class="feature fg">
+      <h4>🔔 Notification bell <span class="pill p-grey">Staff &amp; Worker dashboards</span></h4>
+      <ul>
+        <li>Red number = unread notifications. Refreshes every 15 seconds.</li>
+        <li><b>Workers</b> get: new task assigned, reminder from staff, task cancelled.</li>
+        <li><b>Staff</b> get: waste collected, disposal completed, reminder-sent confirmations.</li>
+        <li>Click an item to mark it read (workers: it also opens that task). <b>Mark all read</b> clears the badge.</li>
+      </ul>
+    </div>
+    <div class="feature fg">
+      <h4>👤 My Profile <span class="pill p-grey">Staff &amp; Worker</span></h4>
+      <ul>
+        <li>Shows your details, department, member-since date and personal statistics (records logged / collections done).</li>
+        <li><b>Edit Profile</b> — change your display name and phone number.</li>
+        <li><b>Security Settings → Change Password</b> — enter current password, new password twice (min 6 characters).</li>
+      </ul>
+    </div>
+
+    <!-- ADMIN -->
+    <h3 style="color:var(--blue)">🛡️ ADMIN — what you can do</h3>
+    <div class="feature fa">
+      <h4>📊 Dashboard (Biomedical Waste Analytics)</h4>
+      <div class="where">Menu → Dashboard</div>
+      <ul>
+        <li><b>Date picker</b> (top-right) — view any day; <b>Today</b> jumps back; <b>Sync</b> refreshes; <b>Export Audit CSV</b> downloads the records currently shown as a spreadsheet.</li>
+        <li><b>4 KPI cards</b> computed from real data for the selected day:
+          <ul>
+            <li><i>Total BioWaste Volume</i> (kg) with % change vs the previous day.</li>
+            <li><i>Segregation Compliance</i> — % of records where category matched the correct bin <b>and</b> the worker reported no mismatch. CPCB benchmark is &gt;90%.</li>
+            <li><i>Day's Clearance</i> — collected ÷ logged, plus the average time from logging to collection.</li>
+            <li><i>Backlog / Overdue Lots</i> — records from previous days still not collected (red when &gt; 0).</li>
+          </ul></li>
+        <li><b>Weekly trend chart</b> — Sunday-to-Saturday weight per bin colour for the week containing the selected date. Hover for exact kg.</li>
+        <li><b>Hazard Classification Ratio</b> donut — share of weight per bin colour with exact kg.</li>
+        <li><b>Operational Waste Log Stream</b> — every record for that day. Tabs: All / Pending / Completed / Cancelled. Search by record ID, room, category or staff name; filter by category. 15 per page. The 🗑 button <b>permanently deletes</b> a record (asks for confirmation).</li>
+      </ul>
+    </div>
+    <div class="feature fa">
+      <h4>👥 User Management</h4>
+      <div class="where">Menu → User Management</div>
+      <ul>
+        <li><b>Overview page</b>: two big cards open the <i>Medical Staff Details</i> and <i>Sanitation Worker Details</i> sub-pages; below is the <b>All Users</b> table (10 per page) with search and Role / Status filters.</li>
+        <li><b>+ Add New User</b> → form: Full name, Email (= username), Initial password, Phone, Department (medical wards or sanitation services), Job role (Staff / Worker). Emails must be unique.</li>
+        <li>Per user: <b>Edit</b> (name, phone, department, role, and optionally <i>reset their password</i>), <b>Deactivate / Activate</b> (👤✖ / 👤✔ — deactivated users cannot log in), <b>Delete</b> (🗑, confirmation required). The admin account itself cannot be deactivated or deleted.</li>
+        <li><b>Staff / Worker detail pages</b> show KPI cards (total, active on duty, departments/zones, logged today) and a role-specific table with the same actions.</li>
+      </ul>
+    </div>
+    <div class="feature fa">
+      <h4>⚙️ Settings &amp; Hospital Profile</h4>
+      <div class="where">Menu → Settings</div>
+      <ul>
+        <li>Edit the administrator's <b>name</b> and <b>phone</b> (saved to the database), the <b>hospital facility name</b> and <b>licence number</b> (saved in the browser).</li>
+        <li><b>Notification preferences</b> toggles.</li>
+        <li><b>Security &amp; Password → Change Admin Password</b>.</li>
+      </ul>
+    </div>
+
+    <!-- STAFF -->
+    <h3 style="color:var(--teal)">🩺 MEDICAL STAFF — what you can do</h3>
+    <div class="feature fs">
+      <h4>📋 Dashboard</h4>
+      <div class="where">Menu → Dashboard</div>
+      <ul>
+        <li><b>5 KPI cards</b>: Records created today · Total weight today · Pending collections (with overdue count) · Collected / ready to dispose · Disposed today + today's compliance %.</li>
+        <li><b>Hospital Waste Collections table</b> with tabs <i>Today's Records</i> / <i>Overdue &amp; Outstanding</i> / <i>All Records</i>. A record is <b>overdue</b> when it is still pending after 2 hours or from a previous day (shown with ⚠ and elapsed time).</li>
+        <li>Per pending record: <span class="btn-ui blue">Send Reminder</span> — notifies the assigned worker (60-second cooldown to prevent spam; last-sent time is shown) · <span class="btn-ui" style="background:#DC2626">Cancel</span> — opens a dialog where you can give a reason; the worker is notified. Only records not yet collected can be cancelled.</li>
+        <li><b>Worker Verification &amp; Bin Audit</b> section — three counters (awaiting verification · verified &amp; completed · mismatches reported) plus a table showing, for each record, who collected it and whether the worker confirmed the bag colour matched the bin or reported a mismatch (with their note).</li>
+      </ul>
+    </div>
+    <div class="feature fs">
+      <h4>➕ Add Waste Record</h4>
+      <div class="where">Menu → Add Waste Record (or the "Add &amp; Assign Waste" button)</div>
+      <ul>
+        <li><b>Form fields</b>: Description (optional) · Room number/name (type anything; suggestions appear) · Category (6 options) · Weight in kg · Assigned bin · Assign collection worker (dropdown of all <i>active</i> workers).</li>
+        <li>When you choose a category, the <b>correct bin is selected automatically</b> and a green hint confirms it. If you change the bin to a wrong colour, an orange warning explains the BMW rule — you can still save, but the record will be flagged for review.</li>
+        <li><span class="btn-ui blue">Log &amp; Assign Waste Record</span> creates the record (ID like <code>WR-012</code>), sets status <i>Assigned</i>, and instantly notifies the chosen worker.</li>
+      </ul>
+    </div>
+    <div class="feature fs">
+      <h4>🤖 KMCH AI Waste Assistant (chatbot) <span class="pill p-grey">on Add Waste Record (staff) and Dashboard (worker)</span></h4>
+      <ul>
+        <li><b>Type a description</b> — e.g. "blood soaked cotton", "used needle", "syringe without needle", "broken glass vial" — in English, Tamil, Hindi, Telugu, Kannada or Malayalam (native script or transliteration like "ratham thuni"). It replies with the category, the correct bin, disposal protocol and safety warning, and a word-by-word explanation of how it decided.</li>
+        <li><b>Quick chips</b> above the input box ask common questions in one tap (needle-stick protocol, yellow bin rules, PPE…).</li>
+        <li><b>🎤 Voice</b> — click the mic, speak in the selected language; your words appear in the box. <b>Voice On</b> makes the assistant read answers aloud. (Works best in Chrome/Edge.)</li>
+        <li><b>📷 Photo</b> — attach or take a photo of the waste. The backend's Gemini model identifies every item and its bin. <i>Requires <code>GEMINI_API_KEY</code> in the backend <code>.env</code></i>; if it is missing a yellow banner says so and the assistant asks you to describe the item in words instead — it never guesses from a photo.</li>
+        <li><span class="btn-ui" style="background:#0D9488">Apply Category &amp; Bin to Form</span> — one click fills the waste form with the assistant's answer (staff only).</li>
+        <li><b>Speech &amp; Text Language</b> dropdown inside the chatbot sets the voice language; <b>Clear</b> resets the conversation.</li>
+      </ul>
+    </div>
+    <div class="feature fs">
+      <h4>🕓 Waste History</h4>
+      <div class="where">Menu → Waste History</div>
+      <ul>
+        <li>Every record ever logged, 15 per page. Search by record ID / room / worker / description / staff; filter by category and status (Pending, Collected, Completed, Cancelled).</li>
+        <li>Columns include creation time (IST), bin, assigned worker, <b>Compliance</b> (Correct Segregation / Review Required) and status. Cancelled records show the cancellation reason.</li>
+        <li><span class="btn-ui grey">Export CSV</span> downloads the filtered list for Excel.</li>
+      </ul>
+    </div>
+
+    <!-- WORKER -->
+    <h3 style="color:var(--amber)">🚛 SANITATION WORKER — what you can do</h3>
+    <div class="feature fw">
+      <h4>📋 Dashboard</h4>
+      <div class="where">Menu → Dashboard</div>
+      <ul>
+        <li><b>Yellow alert banner</b> appears when you have pending pickups — <b>View Request</b> opens the latest one.</li>
+        <li><b>4 KPI cards</b>: assigned today · pending · collected / ready to dispose · completed disposals.</li>
+        <li><b>Task table</b> with 6 tabs: All · Today's · Overdue · Pending · Collected · Completed. Filter by date, room, category or search by record ID. Click a <b>room name</b> to open the full task details.</li>
+        <li>Actions per task: <span class="btn-ui blue">Collect</span> (Pending → Collected) · <span class="btn-ui">Dispose</span> (Collected → opens bin verification) · <b>View</b> for finished ones.</li>
+        <li><b>Verification Protocol</b> panel at the bottom — tap to open a colour-by-colour reminder of what goes in each bin.</li>
+        <li>The <b>AI assistant</b> is on the right (same features as staff, minus "Apply to form").</li>
+      </ul>
+    </div>
+    <div class="feature fw">
+      <h4>✅ Bin verification (the Dispose step)</h4>
+      <ul>
+        <li>A dialog shows the assigned bin colour as a big coloured circle and asks: <i>"Does the waste bag colour match the assigned bin?"</i></li>
+        <li><b>Yes — bag matches</b> → <span class="btn-ui">Confirm &amp; Complete Disposal</span>. Record becomes <i>Completed</i>, marked "Verified Match".</li>
+        <li><b>No — report colour mismatch</b> → you must type what was wrong (e.g. "yellow bag found in blue bin"). The record is completed but flagged; staff and admin see the mismatch and it lowers the compliance score.</li>
+      </ul>
+    </div>
+    <div class="feature fw">
+      <h4>📦 Assigned Collections</h4>
+      <div class="where">Menu → Assigned Collections</div>
+      <ul>
+        <li>A focused list of only your <b>active</b> tasks (Pending + Collected) with status/room/category filters and the same Collect / Dispose buttons. Shows overdue warnings.</li>
+      </ul>
+    </div>
+    <div class="feature fw">
+      <h4>🕓 Collection History</h4>
+      <div class="where">Menu → Collection History</div>
+      <ul>
+        <li>Audit trail of everything you have disposed: collected time, disposed time, verification result (Verified Match / mismatch note). Search, filter by category and room, <b>Export CSV</b>.</li>
+      </ul>
+    </div>
+
+    <h3>✨ A guided 3-minute tour (try it now)</h3>
     <ul class="check" id="tour">
-      <li><input type="checkbox"><span>Log in as <b>staff001</b> → <b>Add Waste Record</b> → fill Room "ICU", 2.5 kg, pick <b>worker001</b> → submit</span></li>
-      <li><input type="checkbox"><span>Log out → log in as <b>worker001</b> → notice the 🔔 bell has a new notification</span></li>
-      <li><input type="checkbox"><span>Click <b>Collect</b> on the new task, then <b>Dispose</b> → choose "Yes — bag matches" → confirm</span></li>
-      <li><input type="checkbox"><span>Open <b>Collection History</b> — your record is there with "Verified Match"</span></li>
-      <li><input type="checkbox"><span>Log in as <b>adminname</b> — the dashboard compliance %, clearance and bin chart reflect what you just did</span></li>
-      <li><input type="checkbox"><span>Switch the language to தமிழ் from the sidebar 🎉</span></li>
+      <li><input type="checkbox"><span>Log in as <b>staff001</b> → <b>Add Waste Record</b>. In the chatbot type <i>"blood soaked cotton"</i> → it answers <b>Yellow / Infectious Waste</b> → click <b>Apply Category &amp; Bin to Form</b>.</span></li>
+      <li><input type="checkbox"><span>Fill Room "ICU Bed 3", Weight 2.5, choose worker <b>worker001</b> → <b>Log &amp; Assign Waste Record</b>. Note the record ID.</span></li>
+      <li><input type="checkbox"><span>Back on the Dashboard, find your record under <i>Today's Records</i> and click <b>Send Reminder</b>.</span></li>
+      <li><input type="checkbox"><span>Log out → log in as <b>worker001</b>. The 🔔 bell shows 2 notifications (assignment + reminder). Click <b>Collect</b> on your record.</span></li>
+      <li><input type="checkbox"><span>Click <b>Dispose</b> → "Yes — bag matches" → <b>Confirm</b>. Open <b>Collection History</b> — it's there with "Verified Match".</span></li>
+      <li><input type="checkbox"><span>Log in as <b>adminname</b> → Dashboard shows today's volume, clearance and compliance updated. Open <b>User Management</b> and deactivate/reactivate a worker.</span></li>
+      <li><input type="checkbox"><span>Switch the sidebar language to <b>தமிழ்</b> — everything changes. 🎉</span></li>
     </ul>
   </section>
 
-  <!-- STEP 7 -->
-  <section class="card" id="s7">
+  <!-- ========================================================= PART 9 -->
+  <section class="card" id="p9">
+    <span class="part-label">Part 9</span>
     <div class="step-head">
-      <div class="step-num c-slate">7</div>
-      <div><h2>Daily use, scripts &amp; saving your changes to GitHub</h2><small>Everything you'll type regularly</small></div>
+      <div class="step-num c-slate">9</div>
+      <div><h2>Daily use, useful commands &amp; saving to GitHub</h2><small>What you'll type again and again</small></div>
     </div>
 
-    <h3>▶️ Starting the project next time</h3>
+    <h3>▶️ Starting the project next time (3 steps)</h3>
     <table>
-      <tr><th>Terminal</th><th>Commands</th></tr>
-      <tr><td>Docker (if Option A)</td><td><code>docker compose up -d mongo</code> <span style="color:var(--muted)">(from project root)</span></td></tr>
-      <tr><td>Terminal 1 — backend</td><td><code>cd hospital-waste-backend</code> then <code>npm run dev</code></td></tr>
-      <tr><td>Terminal 2 — website</td><td><code>cd hospital-waste-frontend</code> then <code>npm run dev</code></td></tr>
-      <tr><td>Stop anything</td><td>Press <kbd>Ctrl</kbd> + <kbd>C</kbd> in that terminal</td></tr>
+      <tr><th>#</th><th>Where</th><th>Command</th></tr>
+      <tr><td>1</td><td>Docker Desktop (Option A only)</td><td>Open Docker Desktop. If MongoDB isn't running: <code>docker compose up -d mongo</code> from the project root</td></tr>
+      <tr><td>2</td><td>Terminal 1</td><td><code>cd hospital-waste-backend</code> → <code>npm run dev</code> (or <code>npm run dev:memory</code>)</td></tr>
+      <tr><td>3</td><td>Terminal 2</td><td><code>cd hospital-waste-frontend</code> → <code>npm run dev</code> → open <a href="http://localhost:5173">localhost:5173</a></td></tr>
+      <tr><td>⏹</td><td>Any terminal</td><td>Stop a server with <kbd>Ctrl</kbd>+<kbd>C</kbd></td></tr>
     </table>
 
-    <h3>🧰 Useful scripts</h3>
+    <h3>🧰 All available scripts</h3>
     <table>
-      <tr><th>Where</th><th>Command</th><th>What it does</th></tr>
-      <tr><td>backend</td><td><code>npm run dev</code></td><td>Start API with auto-restart on file changes</td></tr>
-      <tr><td>backend</td><td><code>npm run dev:memory</code></td><td>Start API with a temporary in-memory database</td></tr>
-      <tr><td>backend</td><td><code>npm run seed:history</code></td><td>Add 6 weeks of sample records for charts</td></tr>
-      <tr><td>backend</td><td><code>node smoke-test.js</code></td><td>Tests the whole API (login, roles, workflow) — expect "All smoke tests passed"</td></tr>
-      <tr><td>frontend</td><td><code>npm run build</code></td><td>Create the production website in <code>dist/</code></td></tr>
-      <tr><td>frontend</td><td><code>npm run lint</code></td><td>Check code quality</td></tr>
-      <tr><td>frontend</td><td><code>node ui-smoke.mjs</code></td><td>Opens every page in a hidden Chrome and checks for errors (needs both servers running)</td></tr>
+      <tr><th>Folder</th><th>Command</th><th>What it does</th></tr>
+      <tr><td>backend</td><td><code>npm run dev</code></td><td>Start the API; restarts automatically when you edit a file</td></tr>
+      <tr><td>backend</td><td><code>npm run dev:memory</code></td><td>Start the API with a temporary in-memory database</td></tr>
+      <tr><td>backend</td><td><code>npm run seed:history</code></td><td>Add 6 weeks of sample records for the charts</td></tr>
+      <tr><td>backend</td><td><code>node smoke-test.js</code></td><td>Runs 41 API checks (login, permissions, full workflow). Expect <i>"All smoke tests passed."</i></td></tr>
+      <tr><td>frontend</td><td><code>npm run dev</code></td><td>Start the website for development</td></tr>
+      <tr><td>frontend</td><td><code>npm run build</code></td><td>Make the optimised production website in <code>dist/</code></td></tr>
+      <tr><td>frontend</td><td><code>npm run test:nlp</code></td><td>Checks the chatbot classifies 40+ phrases correctly in all languages</td></tr>
+      <tr><td>frontend</td><td><code>npm run test:ui</code></td><td>Opens every page in a hidden Chrome and checks for errors (both servers must be running)</td></tr>
+      <tr><td>frontend</td><td><code>npm run lint</code></td><td>Code quality check</td></tr>
     </table>
 
     <h3>💾 Saving your changes to your GitHub fork</h3>
-    <div class="code"><button class="copy">Copy</button><pre><span class="cmt"># see what changed</span>
+    <p>After editing any file, run these three commands from the project root:</p>
+    <div class="code"><button class="copy">Copy</button><pre><span class="cmt"># see which files changed</span>
 git status
 
-<span class="cmt"># stage everything, commit with a message, push to GitHub</span>
+<span class="cmt"># stage everything + describe the change + upload to GitHub</span>
 git add .
-git commit -m "Describe what you changed"
+git commit -m "Describe what you changed, e.g. Added Oncology ward to room list"
 git push</pre></div>
-    <div class="note n-info"><div class="ic">🔑</div><div><strong>GitHub asks for a password?</strong> Use a <b>Personal Access Token</b> instead of your account password: GitHub → Settings → Developer settings → Personal access tokens → Generate (tick <i>repo</i> / Contents: read &amp; write). Paste the token when prompted.</div></div>
+    <div class="note n-info"><div class="ic">🔑</div><div><strong>First push asks you to sign in</strong> — a browser window opens (Git Credential Manager); sign in to GitHub and approve. If it asks for a password in the terminal instead, GitHub requires a <b>Personal Access Token</b>, not your account password: GitHub → your avatar → Settings → Developer settings → Personal access tokens → Fine-grained → Generate → Repository access: your fork → Permissions: <b>Contents: Read and write</b> → copy the token and paste it as the password.</div></div>
 
     <h3>🚀 Putting it online (when you're ready)</h3>
-    <ul class="sub">
-      <li><b>Database:</b> free cluster at <a href="https://www.mongodb.com/atlas" target="_blank">MongoDB Atlas</a> → paste the connection string into <code>MONGO_URI</code>.</li>
-      <li><b>Backend:</b> deploy <code>hospital-waste-backend</code> to Render / Railway. Set <code>JWT_SECRET</code>, <code>MONGO_URI</code>, <code>CORS_ORIGIN=https://your-site.com</code>.</li>
-      <li><b>Website:</b> run <code>npm run build</code> in <code>hospital-waste-frontend</code>, upload <code>dist/</code> to Netlify / Vercel with <code>VITE_API_URL=https://your-backend/api</code>.</li>
-    </ul>
+    <ol class="sub">
+      <li><b>Database:</b> create a free cluster at <a href="https://www.mongodb.com/atlas" target="_blank">MongoDB Atlas</a> → "Connect" → copy the connection string into <code>MONGO_URI</code>.</li>
+      <li><b>Backend:</b> deploy the <code>hospital-waste-backend</code> folder to Render / Railway (free tiers). Set environment variables <code>MONGO_URI</code>, <code>JWT_SECRET</code>, <code>CORS_ORIGIN=https://your-site.netlify.app</code>.</li>
+      <li><b>Website:</b> in <code>hospital-waste-frontend</code> set <code>VITE_API_URL=https://your-backend.onrender.com/api</code>, run <code>npm run build</code>, and upload the <code>dist/</code> folder to Netlify / Vercel (or connect the repo and let them build it).</li>
+    </ol>
   </section>
 
-  <!-- STEP 8 -->
-  <section class="card" id="s8">
+  <!-- ========================================================= PART 10 -->
+  <section class="card" id="p10">
+    <span class="part-label">Part 10</span>
     <div class="step-head">
-      <div class="step-num c-pink">8</div>
+      <div class="step-num c-pink">10</div>
       <div><h2>Troubleshooting</h2><small>Click a problem to see the fix</small></div>
     </div>
 
-    <details><summary>❌ "Could not reach MongoDB" / "MongoDB connection error"</summary>
-      <p>The database isn't running. Start it with <code>docker compose up -d mongo</code> (Option A) — or use <code>npm run dev:memory</code> instead, which needs no database at all.</p>
+    <details><summary>❌ Backend says "Could not reach MongoDB" / "MongoDB connection error"</summary>
+      <p>The database isn't running. Open Docker Desktop and run <code>docker compose up -d mongo</code> from the project root — or start the backend with <code>npm run dev:memory</code>, which needs no database.</p>
     </details>
     <details><summary>❌ "Port 5000 is already in use"</summary>
-      <p>Another backend is still running. Close the other terminal, or change <code>PORT=5001</code> in the backend <code>.env</code> and set <code>VITE_API_URL=http://localhost:5001/api</code> in the frontend <code>.env</code>.</p>
-      <span class="label l-win">Windows: find &amp; stop it</span>
+      <p>An old backend is still running in another window. Close it (<kbd>Ctrl</kbd>+<kbd>C</kbd>), or force-stop it:</p>
+      <span class="label l-win">Windows PowerShell</span>
       <div class="code"><button class="copy">Copy</button><pre>Get-NetTCPConnection -LocalPort 5000 | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }</pre></div>
+      <span class="label l-mac">Mac</span>
+      <div class="code"><button class="copy">Copy</button><pre>lsof -ti:5000 | xargs kill -9</pre></div>
     </details>
-    <details><summary>❌ Website shows "Cannot reach the server"</summary>
-      <p>The backend (Terminal 1) isn't running or crashed. Check that <a href="http://localhost:5000/api/health" target="_blank">localhost:5000/api/health</a> opens. Restart with <code>npm run dev</code> in <code>hospital-waste-backend</code>.</p>
+    <details><summary>❌ Website shows "Cannot reach the server. Please check that the backend is running."</summary>
+      <p>Terminal 1 (backend) is not running or crashed. Check <a href="http://localhost:5000/api/health" target="_blank">localhost:5000/api/health</a>. Restart with <code>npm run dev</code> inside <code>hospital-waste-backend</code>.</p>
     </details>
     <details><summary>❌ "Invalid username or password"</summary>
-      <p>Make sure you clicked the matching role card first (e.g. <b>Worker Login</b> for <code>worker001</code>). Password is <code>Password123</code> with a capital P. Remember <code>staff010, staff020…</code> and <code>worker012, worker024…</code> are intentionally deactivated.</p>
+      <p>Check: (1) you clicked the matching role card first, (2) password is <code>Password123</code> with capital P, (3) the account isn't one of the intentionally deactivated ones (<code>staff010, staff020…</code>, <code>worker012, worker024…</code>).</p>
     </details>
-    <details><summary>❌ "Your session has expired"</summary>
-      <p>Normal after 12 hours, or if you restarted the backend with a different <code>JWT_SECRET</code>, or restarted the in-memory database. Just log in again.</p>
+    <details><summary>❌ "Access denied. Account role is 'worker', not 'admin'"</summary>
+      <p>You chose the wrong role card. Go back and pick the card that matches the account.</p>
     </details>
-    <details><summary>❌ <code>npm install</code> fails or <code>'npm' is not recognized</code></summary>
-      <p>Node.js isn't installed or the terminal was opened before installing. Install the LTS from <a href="https://nodejs.org" target="_blank">nodejs.org</a>, then <b>close and reopen</b> the terminal. Check with <code>node --version</code> (should be 20 or higher).</p>
+    <details><summary>❌ "Your session has expired. Please log in again."</summary>
+      <p>Normal after 12 hours, or when you restarted the backend with a different <code>JWT_SECRET</code>, or restarted the in-memory database. Just log in again.</p>
+    </details>
+    <details><summary>❌ <code>npm</code> / <code>node</code> / <code>git</code> "is not recognized"</summary>
+      <p>Not installed, or the terminal was opened before installing. Install from Part 1, then <b>close and reopen the terminal</b>. <code>node --version</code> must show 20 or higher.</p>
     </details>
     <details><summary>❌ PowerShell: "running scripts is disabled on this system"</summary>
       <div class="code"><button class="copy">Copy</button><pre>Set-ExecutionPolicy -Scope CurrentUser RemoteSigned</pre></div>
       <p>Answer <b>Y</b>, then run the npm command again.</p>
     </details>
-    <details><summary>❌ Photo identification says "Gemini API key is not configured"</summary>
-      <p>Get a free key at <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a>, put it in <code>GEMINI_API_KEY=</code> in the backend <code>.env</code>, restart the backend. Text &amp; voice assistant work without it.</p>
+    <details><summary>❌ <code>npm install</code> fails with EACCES / permission errors (Mac)</summary>
+      <p>Don't use <code>sudo</code>. Fix npm's folder permissions once: <code>sudo chown -R $(whoami) ~/.npm</code>, then run <code>npm install</code> again.</p>
     </details>
-    <details><summary>🔄 I want to reset all data back to the demo state</summary>
+    <details><summary>❌ Docker: "Cannot connect to the Docker daemon"</summary>
+      <p>Docker Desktop isn't open. Open it, wait for "Engine running", retry.</p>
+    </details>
+    <details><summary>❌ Chatbot photo says "Photo scanning is unavailable / not configured"</summary>
+      <p>Expected if you haven't added a Gemini key. Get a free key at <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a>, put it in <code>GEMINI_API_KEY=</code> in <code>hospital-waste-backend/.env</code>, restart the backend. Text and voice work without it.</p>
+    </details>
+    <details><summary>❌ Microphone button says "not supported" or does nothing</summary>
+      <p>Speech recognition works in <b>Chrome</b> and <b>Edge</b>. Allow microphone access when the browser asks (🔒 icon in the address bar → Microphone → Allow).</p>
+    </details>
+    <details><summary>🔄 Reset all data back to the fresh demo state</summary>
       <span class="label l-all">Docker (Option A)</span>
       <div class="code"><button class="copy">Copy</button><pre>docker compose down -v
 docker compose up -d mongo</pre></div>
-      <p>Then restart the backend — it re-seeds automatically. (With <code>dev:memory</code>, simply restart the backend.)</p>
+      <p>Then restart the backend — it re-creates the demo users automatically. (In-memory: just restart the backend.)</p>
     </details>
-    <details><summary>🔄 Get the latest updates from the original repository</summary>
-      <div class="code"><button class="copy">Copy</button><pre><span class="cmt"># one time: add the original repo as "upstream" (replace with the original owner's URL)</span>
+    <details><summary>🔄 Get the latest updates from the original repository into your fork</summary>
+      <div class="code"><button class="copy">Copy</button><pre><span class="cmt"># one time: register the original repo as "upstream" (use the original owner's URL)</span>
 git remote add upstream https://github.com/<span class="hl">ORIGINAL-OWNER</span>/Hospital-biomedical-waste-management.git
 
 <span class="cmt"># whenever you want the newest changes</span>
 git pull upstream main
 git push</pre></div>
     </details>
+    <div class="note n-danger" style="margin-top:1.25rem"><div class="ic">🛡️</div><div><strong>Never commit secrets.</strong> <code>.env</code> files are ignored by Git on purpose. Keep <code>JWT_SECRET</code>, your Gemini key and GitHub tokens private — if one leaks, regenerate it.</div></div>
+  </section>
 
-    <div class="note n-danger" style="margin-top:1.25rem"><div class="ic">🛡️</div><div><strong>Never commit secrets.</strong> The <code>.env</code> files are ignored by Git on purpose. Keep your <code>JWT_SECRET</code>, Gemini key and GitHub tokens private — if one leaks, regenerate it.</div></div>
+  <!-- ========================================================= PART 11 -->
+  <section class="card" id="p11">
+    <span class="part-label">Part 11</span>
+    <div class="step-head">
+      <div class="step-num c-teal">11</div>
+      <div><h2>FAQ &amp; glossary</h2><small>Short answers to common questions</small></div>
+    </div>
+    <details><summary>Do I need internet to run it?</summary><p>Only for the first <code>npm install</code>, Docker image download, Google Fonts, and the optional photo AI. Everything else runs locally.</p></details>
+    <details><summary>Can several people use it at once?</summary><p>Yes — anyone on the same Wi-Fi can open <code>http://YOUR-PC-IP:5173</code> if you start the frontend with <code>npm run dev -- --host</code> and set <code>VITE_API_URL=http://YOUR-PC-IP:5000/api</code> in the frontend <code>.env</code>.</p></details>
+    <details><summary>Where is the data stored?</summary><p>In MongoDB (Docker volume <code>biowaste-mongo-data</code>, or your local MongoDB). Nothing is sent anywhere except photos to Google when you use photo scanning with your own key.</p></details>
+    <details><summary>How do I add a new language?</summary><p>In <code>hospital-waste-frontend/src/i18n/translations.js</code> add an entry to <code>LANGUAGES</code> and a dictionary object. Missing keys fall back to English, so you can translate gradually.</p></details>
+    <details><summary>How do I change the hospital name / colours?</summary><p>Name: <code>common.hospital</code>, <code>common.appName</code> in <code>translations.js</code>. Colours: CSS variables at the top of <code>src/index.css</code>.</p></details>
+    <details><summary>What is the "hospital-waste-dashboard" folder?</summary><p>An older Flask (Python) prototype kept for reference. It is not used by the website and you can ignore it.</p></details>
+
+    <h3>📖 Glossary</h3>
+    <table>
+      <tr><th>Term</th><th>Meaning</th></tr>
+      <tr><td><b>Repository (repo)</b></td><td>A project folder tracked by Git, stored on GitHub.</td></tr>
+      <tr><td><b>Fork</b></td><td>Your own copy of someone else's repository on your GitHub account.</td></tr>
+      <tr><td><b>Clone</b></td><td>Downloading a repository to your computer with Git.</td></tr>
+      <tr><td><b>Commit / Push</b></td><td>Saving a snapshot of your changes / uploading those snapshots to GitHub.</td></tr>
+      <tr><td><b>Terminal</b></td><td>The text window where you type commands (PowerShell on Windows, Terminal on Mac).</td></tr>
+      <tr><td><b>Backend / API</b></td><td>The server program that stores data and enforces rules (port 5000).</td></tr>
+      <tr><td><b>Frontend</b></td><td>The website you click on (port 5173).</td></tr>
+      <tr><td><b>MongoDB</b></td><td>The database where users and waste records live.</td></tr>
+      <tr><td><b>.env</b></td><td>A small text file with settings/secrets that is never uploaded to GitHub.</td></tr>
+      <tr><td><b>JWT</b></td><td>The login token your browser holds after signing in (valid 12 h).</td></tr>
+      <tr><td><b>BMW Rules 2016</b></td><td>India's Bio-Medical Waste Management Rules — the colour-coded bin law the app follows.</td></tr>
+      <tr><td><b>CPCB</b></td><td>Central Pollution Control Board — sets the &gt;90% segregation benchmark.</td></tr>
+      <tr><td><b>IST</b></td><td>Indian Standard Time — all "today" calculations use it.</td></tr>
+    </table>
   </section>
 
   <section class="card" style="text-align:center;background:linear-gradient(135deg,#EFF6FF,#F0FDFA)">
     <h2 style="font-size:1.4rem;font-weight:800">You're all set! 🎊</h2>
-    <p style="max-width:560px;margin:.5rem auto 0">Backend on <b>:5000</b>, website on <b>:5173</b>, three roles, six languages, one complete waste-tracking workflow. For deeper technical details (API routes, environment variables, project structure) see <code>README.md</code>.</p>
+    <p style="max-width:600px;margin:.5rem auto 0">Backend on <b>:5000</b>, website on <b>:5173</b>, three roles, six languages, one complete waste-tracking workflow. For developer-level details (every API route, environment variable, project structure) open <code>README.md</code>.</p>
   </section>
 
 </main>
 
-<footer>KMCH Hospital · Biomedical Waste Segregation &amp; Management System · Setup Guide</footer>
+<footer>KMCH Hospital · Biomedical Waste Segregation &amp; Management System · Setup &amp; User Guide</footer>
 <a href="#" class="top" title="Back to top">↑</a>
 
 <script>
-  // Copy buttons
   document.querySelectorAll('.copy').forEach(btn => {
     btn.addEventListener('click', () => {
       const text = btn.parentElement.querySelector('pre').innerText
-        .split('\n').filter(l => !l.trim().startsWith('#')).join('\n').trim();
+        .split('\n').map(l => l.replace(/\s+#.*$/, '')).filter(l => !l.trim().startsWith('#')).join('\n').trim();
       navigator.clipboard.writeText(text).then(() => {
         btn.textContent = 'Copied ✓'; btn.classList.add('done');
         setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('done'); }, 1600);
       });
     });
   });
-  // Tour checklist (remembered in the browser)
   const boxes = document.querySelectorAll('#tour input');
   boxes.forEach((b, i) => {
-    b.checked = localStorage.getItem('tour-' + i) === '1';
+    b.checked = localStorage.getItem('tour2-' + i) === '1';
     b.parentElement.classList.toggle('done', b.checked);
     b.addEventListener('change', () => {
-      localStorage.setItem('tour-' + i, b.checked ? '1' : '0');
+      localStorage.setItem('tour2-' + i, b.checked ? '1' : '0');
       b.parentElement.classList.toggle('done', b.checked);
     });
   });
