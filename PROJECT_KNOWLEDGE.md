@@ -560,6 +560,7 @@ Component `components/WasteChatbot.jsx`; brain `services/nlpEngine.js`; vision `
 Browser `SpeechRecognition` (Chrome/Edge) with the selected `xx-IN` locale fills the input; `speechSynthesis` reads replies when **Voice On**. No audio is sent to any server.
 
 ### 18.3 Photo
+Enabling it (get a free key, edit `.env`, restart) is documented step by step in **`ENABLE_PHOTO_SCAN.md`**.
 1. Frontend calls `GET /ai/status`; if not configured a yellow banner says photo scanning is off.
 2. On send with an image: `POST /ai/classify-image` (image + typed text as `hint`).
 3. Backend (Gemini, JSON mode, temperature 0.1) is prompted with the BMW rules, explicitly: *soft absorbent material stained with blood (cotton, gauze, swabs) is ALWAYS Infectious Waste — never Sharps*; sharps only for rigid puncturing objects; syringe with needle → White, without → Red; return one item per object; set `uncertain` when unsure.

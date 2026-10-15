@@ -137,7 +137,7 @@ Segregation compliance is computed from the statutory category→bin mapping (`u
 ### AI Waste Assistant
 
 - **Text & voice** classification runs fully in the browser (`src/services/nlpEngine.js`) — no API key needed.
-- **Photo** classification is done server-side by Gemini (`POST /api/ai/classify-image`). It requires `GEMINI_API_KEY` in the backend `.env`; without it the assistant says so and asks for a text description instead of guessing. Categories/bins returned by the model are validated against the BMW 2016 mapping on the server.
+- **Photo** classification is done server-side by Gemini (`POST /api/ai/classify-image`). It requires `GEMINI_API_KEY` in the backend `.env`; without it the assistant says so and asks for a text description instead of guessing. Categories/bins returned by the model are validated against the BMW 2016 mapping on the server. **Step-by-step: [`ENABLE_PHOTO_SCAN.md`](ENABLE_PHOTO_SCAN.md).**
 
 Translations live in `src/i18n/translations.js`; add a language by adding an entry to `LANGUAGES` and a dictionary (missing keys fall back to English).
 

@@ -408,7 +408,7 @@ npm install</pre></div>
       <tr><td><code>JWT_SECRET=…</code></td><td>Secret used to sign login sessions</td><td><span class="pill p-red">YES</span> — type any long random sentence, e.g. <code>kmch-biowaste-2026-my-secret-phrase-8831</code></td></tr>
       <tr><td><code>JWT_EXPIRES_IN=12h</code></td><td>How long a login lasts before re-login</td><td>No</td></tr>
       <tr><td><code>CORS_ORIGIN=</code></td><td>Which website addresses may call the API (empty = any, fine for local use)</td><td>No (set when deploying online)</td></tr>
-      <tr><td><code>GEMINI_API_KEY=…</code></td><td>Enables <b>photo</b> identification in the AI assistant</td><td><span class="pill p-amber">Optional</span> — free key from <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a>. Text &amp; voice work without it.</td></tr>
+      <tr><td><code>GEMINI_API_KEY=…</code></td><td>Enables <b>photo</b> identification in the AI assistant</td><td><span class="pill p-amber">Optional</span> — free key from <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a>. Text &amp; voice work without it. <b>Simple 4-step guide: <a href="ENABLE_PHOTO_SCAN.md" target="_blank">ENABLE_PHOTO_SCAN.md</a></b></td></tr>
       <tr><td><code>GEMINI_MODEL=gemini-2.5-flash</code></td><td>Which Google model analyses photos</td><td>No</td></tr>
     </table>
 
@@ -771,7 +771,7 @@ git push</pre></div>
       <p>Docker Desktop isn't open. Open it, wait for "Engine running", retry.</p>
     </details>
     <details><summary>❌ Chatbot photo says "Photo scanning is unavailable / not configured"</summary>
-      <p>Expected if you haven't added a Gemini key. Get a free key at <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a>, put it in <code>GEMINI_API_KEY=</code> in <code>hospital-waste-backend/.env</code>, restart the backend. Text and voice work without it.</p>
+      <p>Expected if you haven't added a Gemini key. Get a free key at <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a>, put it in <code>GEMINI_API_KEY=</code> in <code>hospital-waste-backend/.env</code>, restart the backend. Text and voice work without it. Full walkthrough with screenshots-style steps: <a href="ENABLE_PHOTO_SCAN.md" target="_blank"><b>ENABLE_PHOTO_SCAN.md</b></a>.</p>
     </details>
     <details><summary>❌ Microphone button says "not supported" or does nothing</summary>
       <p>Speech recognition works in <b>Chrome</b> and <b>Edge</b>. Allow microphone access when the browser asks (🔒 icon in the address bar → Microphone → Allow).</p>
