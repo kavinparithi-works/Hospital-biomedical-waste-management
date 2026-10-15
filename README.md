@@ -10,6 +10,8 @@ Role-based web application for logging, assigning, collecting and auditing hospi
 
 The UI is available in **English, Tamil, Hindi, Telugu, Kannada and Malayalam** (switcher on the login page and in the sidebar).
 
+> **New here?** Open **[`SETUP_GUIDE.html`](SETUP_GUIDE.html)** in your browser for an illustrated, step-by-step setup walkthrough (fork → clone → run → log in), including troubleshooting.
+
 ## Project layout
 
 ```
