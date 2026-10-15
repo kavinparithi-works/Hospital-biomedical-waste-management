@@ -38,6 +38,11 @@
   --purple-bg: #F5F3FF;
   --purple-text: #7C3AED;
 
+  /* Aliases used across pages */
+  --text-dark: #0F172A;
+  --light-blue: #EFF6FF;
+  --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.10);
+
   /* Statutory Biowaste Bin Colors */
   --yellow-bin: #F59E0B;
   --red-bin: #EF4444;
@@ -128,12 +133,91 @@ a:hover {
   }
 }
 
+/* Mobile top bar + collapsible sidebar */
+.mobile-topbar {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  background: #FFFFFF;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 95;
+}
+
 @media (max-width: 768px) {
+  .app-container { flex-direction: column; }
   .main-content {
     margin-left: 0;
     padding: 1rem;
     padding-bottom: 80px;
   }
+  .mobile-topbar { display: flex; }
+  .app-sidebar { transform: translateX(-100%); transition: transform 0.25s ease; }
+  .app-sidebar.open { transform: translateX(0); }
+  .sidebar-backdrop.open { display: block; }
+  .sidebar-close { display: flex !important; }
+}
+
+.lang-select { flex: 1; min-width: 0; }
+
+/* Responsive helper grids */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1.85fr 1.15fr;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-with-aside {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.worker-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .two-col, .form-with-aside, .profile-grid, .worker-main-grid { grid-template-columns: 1fr; }
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 /* Modern SaaS Cards */
@@ -246,6 +330,160 @@ a:hover {
   background-color: #E2E8F0;
   color: var(--text-primary);
 }
+
+.btn-success {
+  background-color: var(--green-success);
+  color: #FFFFFF;
+  border-color: var(--green-success);
+}
+
+.btn-success:hover { background-color: var(--green-text); }
+
+.btn-danger {
+  background-color: #FFFFFF;
+  color: var(--red-text);
+  border: 1px solid var(--red-border);
+}
+
+.btn-danger:hover { background-color: var(--red-bg); }
+
+.btn-sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.82rem;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.cursor-pointer { cursor: pointer; }
+
+/* Stat cards (used on staff/admin dashboards) */
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.15rem 1.25rem;
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-blue { background-color: #EFF6FF; color: var(--primary-blue); }
+.stat-green { background-color: var(--green-bg); color: var(--green-text); }
+.stat-yellow { background-color: var(--amber-bg); color: var(--amber-text); }
+.stat-red { background-color: var(--red-bg); color: var(--red-text); }
+.stat-purple { background-color: var(--purple-bg); color: var(--purple-text); }
+
+.stat-details { min-width: 0; flex: 1; }
+
+.stat-details h4 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.stat-details .value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-top: 0.15rem;
+  line-height: 1.2;
+}
+
+/* Toasts */
+.toast-stack {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: min(380px, calc(100vw - 2rem));
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid;
+  font-size: 0.85rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-dropdown);
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-top: 1px solid var(--card-border);
+  background-color: #F8FAFC;
+}
+
+.pagination-label {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* Modal overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.55);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* Language selector */
+.lang-select {
+  padding: 0.4rem 1.9rem 0.4rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: #FFFFFF;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 0.9rem;
+}
+
+.lang-select:focus { border-color: var(--primary-blue); }
 
 /* Form Controls */
 .form-group {
@@ -421,6 +659,19 @@ tr:hover td {
 @keyframes pulse {
   0%, 100% { box-shadow: -4px 2px 14px rgba(220, 38, 38, 0.4); transform: translateY(-50%) scale(1); }
   50%       { box-shadow: -4px 2px 22px rgba(220, 38, 38, 0.7); transform: translateY(-50%) scale(1.04); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.spin { animation: spin 0.8s linear infinite; }
+
+@media print {
+  .app-sidebar, .mobile-topbar, .toast-stack, .btn, .pagination { display: none !important; }
+  .main-content { margin-left: 0; padding: 0; max-width: none; }
+  .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
 }
 
 /* Custom Scrollbars */

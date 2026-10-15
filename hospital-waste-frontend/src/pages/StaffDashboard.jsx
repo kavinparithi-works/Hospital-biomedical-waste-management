@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Plus, CheckCircle, RefreshCw, Calendar, 
   Clock, Scale, ShieldCheck, Search, Filter, ArrowLeft,
-  Shield, AlertTriangle, Truck, Bell, Send, UserCheck, AlertCircle
+  AlertTriangle, Truck, Send, UserCheck, Download, XCircle, X, Info
 } from 'lucide-react';
 import WasteChatbot from '../components/WasteChatbot';
 import NotificationBell from '../components/NotificationBell';
+import Pagination from '../components/Pagination';
 import { api } from '../services/api';
 import StaffProfilePage from './StaffProfilePage';
+import { useLanguage } from '../i18n/LanguageContext';
+import { useToast } from '../components/Toast';
 import { 
   isTodayInIST, 
   formatISTDate, 
@@ -16,41 +19,21 @@ import {
   formatISTDateTime, 
   calculateOverdueInfo 
 } from '../utils/dateUtils';
+import { CATEGORIES, BINS, CATEGORY_BIN_MAP, isCompliant, hasMismatch, isActive, isDone, isCancelled, statusBadgeClass, binClass, downloadCsv } from '../utils/waste';
 
-// Helper function to evaluate segregation compliance status
-export const getComplianceStatus = (category, assignedBin) => {
-  if (!category || !assignedBin) {
-    return { text: 'Correct Segregation', isCompliant: true, color: '#27AE60', bg: 'rgba(39, 174, 96, 0.1)' };
-  }
-  const cat = category.toLowerCase();
-  const bin = assignedBin.toLowerCase();
-  let isMatch = false;
-  if (cat.includes('infectious') || cat.includes('soiled') || cat.includes('chemical')) {
-    isMatch = bin.includes('yellow');
-  } else if (cat.includes('sharp')) {
-    isMatch = bin.includes('white') || bin.includes('blue');
-  } else if (cat.includes('recyclable') || cat.includes('plastic')) {
-    isMatch = bin.includes('red') || bin.includes('blue');
-  } else if (cat.includes('general')) {
-    isMatch = bin.includes('green');
-  } else {
-    isMatch = true;
-  }
-  return isMatch
-    ? { text: 'Correct Segregation', isCompliant: true, color: '#27AE60', bg: 'rgba(39, 174, 96, 0.1)' }
-    : { text: 'Review Required', isCompliant: false, color: '#E67E22', bg: 'rgba(230, 126, 34, 0.1)' };
-};
+const PAGE_SIZE = 15;
 
 const StaffDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t, lang } = useLanguage();
+  const toast = useToast();
 
   const isHistoryView = location.pathname.includes('/history');
   const isAddWasteView = location.pathname.includes('/add-waste');
   const isProfileView = location.pathname.includes('/profile');
 
-  const [wasteRecords, setWasteRecords] = useState([]);
-  const [allHistoryRecords, setAllHistoryRecords] = useState([]);
+  const [allRecords, setAllRecords] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -59,10 +42,11 @@ const StaffDashboard = () => {
 
   // Active view tab in main dashboard: 'today' | 'overdue' | 'all'
   const [dashboardTab, setDashboardTab] = useState('today');
+  const [dashboardPage, setDashboardPage] = useState(1);
 
   // Form Fields
   const [description, setDescription] = useState('');
-  const [room, setRoom] = useState('Room 203');
+  const [room, setRoom] = useState('');
   const [category, setCategory] = useState('Infectious Waste');
   const [weight, setWeight] = useState('');
   const [assignedBin, setAssignedBin] = useState('Yellow');
@@ -71,76 +55,89 @@ const StaffDashboard = () => {
   // Reminder feedback state: { [recordId]: { status: 'sending'|'sent'|'error', msg: string } }
   const [reminderState, setReminderState] = useState({});
 
+  // Cancel modal
+  const [cancelTarget, setCancelTarget] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelling, setCancelling] = useState(false);
+
   // History View Filters
   const [historySearch, setHistorySearch] = useState('');
   const [historyCategoryFilter, setHistoryCategoryFilter] = useState('all');
+  const [historyStatusFilter, setHistoryStatusFilter] = useState('all');
+  const [historyPage, setHistoryPage] = useState(1);
 
-  const roomOptions = [
-    'Room 203', 'Room 101', 'Room 105', 'ICU',
-    'Emergency', 'Laboratory', 'Operation Theatre'
-  ];
+  const roomOptions = ['Room 203', 'Room 101', 'Room 105', 'ICU', 'Emergency', 'Laboratory', 'Operation Theatre', 'Pharmacy Store', 'Pediatrics Ward'];
+  const tc = (c) => t(`categories.${c}`);
+  const tb = (b) => t(`bins.${b}`);
+  const ts = (s) => t(`statuses.${s}`);
 
-  const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+  const fetchRecords = useCallback(async () => {
+    try {
+      setLoading(true);
+      setAllRecords(await api.getWasteRecords());
+    } catch (err) {
+      if (err.status !== 401) toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  const fetchWorkers = useCallback(async () => {
+    try {
+      const workerList = await api.getActiveWorkers();
+      setWorkers(workerList || []);
+      setSelectedWorkerId(prev => prev || (workerList && workerList[0] ? workerList[0]._id : ''));
+    } catch (err) {
+      if (err.status !== 401) console.warn('Failed to load workers:', err.message);
+    }
+  }, []);
 
   useEffect(() => {
     fetchRecords();
     fetchWorkers();
-  }, [location.pathname]);
+  }, [location.pathname, fetchRecords, fetchWorkers]);
 
-  const fetchRecords = async () => {
-    try {
-      setLoading(true);
-      const [todayData, allData] = await Promise.all([
-        api.getTodayRecords(),
-        api.getWasteRecords()
-      ]);
-      setWasteRecords(todayData);
-      setAllHistoryRecords(allData);
-    } catch (err) {
-      console.error('Error fetching staff waste records:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Reset pagination whenever the visible set changes
+  useEffect(() => { setDashboardPage(1); }, [dashboardTab]);
+  useEffect(() => { setHistoryPage(1); }, [historySearch, historyCategoryFilter, historyStatusFilter]);
 
-  const fetchWorkers = async () => {
-    try {
-      const workerList = await api.getActiveWorkers();
-      setWorkers(workerList || []);
-      if (workerList && workerList.length > 0 && !selectedWorkerId) {
-        setSelectedWorkerId(workerList[0]._id);
-      }
-    } catch (err) {
-      console.warn('Failed to load workers:', err);
-    }
+  // Keep the bin in sync with the statutory mapping when the category changes
+  const handleCategoryChange = (value) => {
+    setCategory(value);
+    if (CATEGORY_BIN_MAP[value]) setAssignedBin(CATEGORY_BIN_MAP[value]);
   };
 
   // Called by chatbot when it identifies waste — auto-fills the form
   const handleAISuggestion = (suggestion) => {
     if (!suggestion) return;
-    if (suggestion.type) {
-      const typeMap = {
-        'Sharps': 'Sharps',
-        'Sharps & Cutters': 'Sharps',
-        'Infectious / Soiled Waste': 'Infectious Waste',
-        'Contaminated Recyclable Plastics': 'Contaminated Recyclable',
-        'Glassware & Metallic Implants': 'General Waste',
-        'General Non-Hazardous Waste': 'General Waste',
-        'Chemical & Pharmaceutical Waste': 'Chemical Waste',
-      };
-      setCategory(typeMap[suggestion.type] || suggestion.type);
-    }
-    if (suggestion.bin) {
-      setAssignedBin(suggestion.bin.split(' ')[0]);
-    }
+    const typeMap = {
+      'Sharps': 'Sharps',
+      'Sharps & Cutters': 'Sharps',
+      'Infectious / Soiled Waste': 'Infectious Waste',
+      'Infectious Waste': 'Infectious Waste',
+      'Contaminated Recyclable': 'Contaminated Recyclable',
+      'Contaminated Recyclable Plastics': 'Contaminated Recyclable',
+      'Glassware & Implants': 'Glassware & Metallic Implants',
+      'Glassware & Metallic Implants': 'Glassware & Metallic Implants',
+      'General Non-Hazardous Waste': 'General Waste',
+      'General Waste': 'General Waste',
+      'Chemical & Pharmaceutical Waste': 'Chemical Waste',
+      'Chemical Waste': 'Chemical Waste',
+    };
+    const mapped = typeMap[suggestion.type] || (CATEGORIES.includes(suggestion.type) ? suggestion.type : null);
+    const bin = suggestion.bin ? suggestion.bin.split(' ')[0] : null;
+    if (mapped) setCategory(mapped);
+    if (bin && BINS.includes(bin)) setAssignedBin(bin);
+    else if (mapped) setAssignedBin(CATEGORY_BIN_MAP[mapped]);
+    if (mapped) toast.info(t('staff.aiFilled', { category: tc(mapped), bin: tb(bin && BINS.includes(bin) ? bin : CATEGORY_BIN_MAP[mapped]) }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSuccessMsg('');
     setErrorMsg('');
-    if (!room || !category || !weight || !assignedBin) {
-      setErrorMsg('Room, Category, Weight, and Assigned Bin are required.');
+    if (!room.trim() || !category || !weight || !assignedBin) {
+      setErrorMsg(t('staff.requiredFields'));
       return;
     }
     try {
@@ -148,21 +145,22 @@ const StaffDashboard = () => {
       const assignedWorker = workers.find(w => w._id === selectedWorkerId);
       const newRecord = await api.createWasteRecord({
         description, 
-        room, 
+        room: room.trim(), 
         category,
         weight: Number(weight),
         assignedBin,
-        createdBy: currentUser.name || 'Medical Staff',
         assignedTo: assignedWorker ? assignedWorker.name : '',
         assignedToUserId: assignedWorker ? assignedWorker._id : ''
       });
-      setSuccessMsg(`✓ Waste Record ${newRecord.record.recordId} logged and assigned to ${assignedWorker ? assignedWorker.name : 'Unassigned'}!`);
+      const msg = t('staff.successLogged', { id: newRecord.record.recordId, worker: assignedWorker ? assignedWorker.name : t('common.unassigned') });
+      setSuccessMsg(msg);
+      toast.success(msg);
       setDescription('');
       setWeight('');
       await fetchRecords();
       setTimeout(() => setSuccessMsg(''), 5000);
     } catch (err) {
-      setErrorMsg(err.message || 'Failed to log waste record');
+      setErrorMsg(err.message);
     } finally {
       setSubmitting(false);
     }
@@ -170,214 +168,187 @@ const StaffDashboard = () => {
 
   // Staff Sends Overdue Reminder to Worker
   const handleSendReminder = async (record) => {
+    const clearLater = (ms) => setTimeout(() => {
+      setReminderState(prev => { const next = { ...prev }; delete next[record.recordId]; return next; });
+    }, ms);
     try {
-      setReminderState(prev => ({ ...prev, [record.recordId]: { status: 'sending', msg: 'Sending...' } }));
-      const res = await api.sendWasteReminder({
-        wasteRecordId: record._id,
-        recordId: record.recordId,
-        staffName: currentUser.name || 'Medical Staff',
-        staffId: currentUser.id || '',
-        cooldownSeconds: 60
-      });
-      setReminderState(prev => ({
-        ...prev,
-        [record.recordId]: { status: 'sent', msg: `Reminder sent to ${record.assignedTo || 'worker'} ✓` }
-      }));
+      setReminderState(prev => ({ ...prev, [record.recordId]: { status: 'sending', msg: t('staff.sending') } }));
+      await api.sendWasteReminder({ wasteRecordId: record._id, recordId: record.recordId, cooldownSeconds: 60 });
+      setReminderState(prev => ({ ...prev, [record.recordId]: { status: 'sent', msg: t('staff.reminderSent', { name: record.assignedTo || t('common.worker') }) } }));
       await fetchRecords();
-      setTimeout(() => {
-        setReminderState(prev => {
-          const next = { ...prev };
-          delete next[record.recordId];
-          return next;
-        });
-      }, 6000);
+      clearLater(6000);
     } catch (err) {
-      alert(err.message || 'Failed to send reminder');
-      setReminderState(prev => ({
-        ...prev,
-        [record.recordId]: { status: 'error', msg: err.message || 'Failed' }
-      }));
-      setTimeout(() => {
-        setReminderState(prev => {
-          const next = { ...prev };
-          delete next[record.recordId];
-          return next;
-        });
-      }, 4000);
+      toast.error(err.message);
+      setReminderState(prev => ({ ...prev, [record.recordId]: { status: 'error', msg: err.message } }));
+      clearLater(4000);
+    }
+  };
+
+  const confirmCancel = async () => {
+    if (!cancelTarget) return;
+    try {
+      setCancelling(true);
+      await api.cancelWasteRecord(cancelTarget._id, cancelReason);
+      toast.success(t('staff.recordCancelled', { id: cancelTarget.recordId }));
+      setCancelTarget(null);
+      setCancelReason('');
+      await fetchRecords();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setCancelling(false);
     }
   };
 
   // ── Metrics Calculation (Single Source of Truth) ──────────────────────────
-  // Today's records strictly in Asia/Kolkata
-  const recordsCreatedToday = allHistoryRecords.filter(r => isTodayInIST(r.createdAt));
+  const liveRecords = allRecords.filter(r => !isCancelled(r));
+  const recordsCreatedToday = liveRecords.filter(r => isTodayInIST(r.createdAt));
   const totalTodayWeight = recordsCreatedToday.reduce((sum, r) => sum + (Number(r.weight) || 0), 0);
-  
-  // Outstanding pending across all days (including overdue previous-day records)
-  const pendingCount = allHistoryRecords.filter(r => r.status === 'Pending' || r.status === 'Assigned').length;
-  
-  // Collected records awaiting disposal
-  const collectedCount = allHistoryRecords.filter(r => r.status === 'Collected').length;
-  
-  // Disposed records today
-  const disposedTodayCount = allHistoryRecords.filter(r => 
-    (r.status === 'Completed' || r.status === 'Disposed') && 
-    isTodayInIST(r.completedAt || r.disposedAt || r.updatedAt)
-  ).length;
-
-  // Compliance Rate of today's logged records
-  const compliantCount = recordsCreatedToday.filter(r => getComplianceStatus(r.category, r.assignedBin).isCompliant).length;
+  const pendingCount = liveRecords.filter(isActive).length;
+  const collectedCount = liveRecords.filter(r => r.status === 'Collected').length;
+  const disposedTodayCount = liveRecords.filter(r => isDone(r) && isTodayInIST(r.completedAt || r.disposedAt || r.updatedAt)).length;
+  const compliantCount = recordsCreatedToday.filter(r => isCompliant(r.category, r.assignedBin)).length;
   const todayComplianceRate = recordsCreatedToday.length > 0 ? Math.round((compliantCount / recordsCreatedToday.length) * 100) : 100;
 
-  // Overdue / Previous-day pending records
-  const overdueRecords = allHistoryRecords.filter(r => {
-    if (r.status !== 'Pending' && r.status !== 'Assigned') return false;
+  const overdueRecords = liveRecords.filter(r => {
+    if (!isActive(r)) return false;
     const isPastDay = !isTodayInIST(r.createdAt);
     const { isOverdue } = calculateOverdueInfo(r.assignedTime || r.createdAt, 120);
     return isPastDay || isOverdue;
   });
 
-  const filteredHistory = allHistoryRecords.filter(record => {
-    const matchesSearch = !historySearch ||
-      record.recordId?.toLowerCase().includes(historySearch.toLowerCase()) ||
-      record.room?.toLowerCase().includes(historySearch.toLowerCase()) ||
-      record.description?.toLowerCase().includes(historySearch.toLowerCase()) ||
-      record.assignedTo?.toLowerCase().includes(historySearch.toLowerCase());
+  const filteredHistory = allRecords.filter(record => {
+    const q = historySearch.toLowerCase();
+    const matchesSearch = !q ||
+      record.recordId?.toLowerCase().includes(q) ||
+      record.room?.toLowerCase().includes(q) ||
+      record.description?.toLowerCase().includes(q) ||
+      record.assignedTo?.toLowerCase().includes(q) ||
+      record.createdBy?.toLowerCase().includes(q);
     const matchesCategory = historyCategoryFilter === 'all' || record.category === historyCategoryFilter;
-    return matchesSearch && matchesCategory;
+    const matchesStatus = historyStatusFilter === 'all' ||
+      (historyStatusFilter === 'active' && isActive(record)) ||
+      (historyStatusFilter === 'collected' && record.status === 'Collected') ||
+      (historyStatusFilter === 'done' && isDone(record)) ||
+      (historyStatusFilter === 'cancelled' && isCancelled(record));
+    return matchesSearch && matchesCategory && matchesStatus;
   });
+
+  const exportHistory = () => {
+    if (filteredHistory.length === 0) { toast.info(t('admin.noExport')); return; }
+    downloadCsv(
+      `KMCH_Waste_History_${new Date().toISOString().slice(0, 10)}.csv`,
+      ['Record ID', 'Created (IST)', 'Room', 'Category', 'Weight (kg)', 'Assigned Bin', 'Assigned Worker', 'Collected By', 'Collected At', 'Completed At', 'Status', 'Compliance', 'Bin Verified', 'Mismatch Note', 'Logged By'],
+      filteredHistory.map(r => [
+        r.recordId, formatISTDateTime(r.createdAt), r.room, r.category, r.weight, r.assignedBin, r.assignedTo || '', r.collectedBy || '',
+        r.collectedAt ? formatISTDateTime(r.collectedAt) : '', r.completedAt ? formatISTDateTime(r.completedAt) : '', r.status,
+        isCompliant(r.category, r.assignedBin) ? 'Correct' : 'Review', isDone(r) ? (hasMismatch(r) ? 'No' : 'Yes') : '', r.binMismatchNote || '', r.createdBy || ''
+      ])
+    );
+  };
+
+  const StatusBadge = ({ status }) => <span className={`badge ${statusBadgeClass(status)}`}>{ts(status)}</span>;
 
   // ── PROFILE VIEW ──────────────────────────────────────────────────────────
   if (isProfileView) return <StaffProfilePage />;
 
   // ── ADD WASTE VIEW (isolated — form + chatbot only) ───────────────────────
   if (isAddWasteView) {
+    const expectedBin = CATEGORY_BIN_MAP[category];
+    const binMismatch = expectedBin && expectedBin !== assignedBin;
     return (
       <div className="fade-in">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+        <div className="page-header">
           <div>
-            <h1 style={{ margin: 0 }}>Add Waste Record</h1>
-            <p style={{ margin: '0.3rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              Log a new biomedical waste entry and assign it immediately to a collection worker
-            </p>
+            <h1 style={{ margin: 0 }}>{t('staff.addTitle')}</h1>
+            <p style={{ margin: '0.3rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>{t('staff.addSubtitle')}</p>
           </div>
-          <button className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => navigate('/staff')}>
-            <ArrowLeft size={15} /> Back to Dashboard
+          <button className="btn btn-outline" onClick={() => navigate('/staff')}>
+            <ArrowLeft size={15} /> {t('common.backToDashboard')}
           </button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '1.5rem', alignItems: 'start' }}>
+        <div className="form-with-aside">
           {/* Form Card */}
           <div className="card">
             <div className="card-header">
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-                <Plus size={18} /> New Waste Record &amp; Worker Assignment
+                <Plus size={18} /> {t('staff.newRecord')}
               </h3>
             </div>
 
             {successMsg && (
               <div style={{ padding: '0.75rem', backgroundColor: 'rgba(46,204,113,0.12)', color: '#27AE60', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.875rem', fontWeight: 600 }}>
-                {successMsg}
+                ✓ {successMsg}
               </div>
             )}
             {errorMsg && (
-              <div style={{ padding: '0.75rem', backgroundColor: 'rgba(231,76,60,0.1)', color: '#C0392B', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.875rem' }}>
+              <div role="alert" style={{ padding: '0.75rem', backgroundColor: 'rgba(231,76,60,0.1)', color: '#C0392B', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.875rem' }}>
                 {errorMsg}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                <label className="form-label">Waste Description (Optional)</label>
-                <input
-                  type="text" className="form-control"
-                  placeholder="e.g. Blood-soaked cotton swabs, used gloves..."
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
-                />
+            <form onSubmit={handleSubmit} className="grid grid-cols-2" style={{ gap: '1rem' }}>
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <label className="form-label">{t('common.description')} ({t('common.optional')})</label>
+                <input type="text" className="form-control" placeholder={t('staff.descriptionPlaceholder')} value={description} onChange={e => setDescription(e.target.value)} maxLength={300} />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Room Number / Name <span style={{ color: 'red' }}>*</span></label>
-                <input
-                  type="text" className="form-control"
-                  placeholder="e.g. Room 203, ICU, Lab..."
-                  value={room}
-                  onChange={e => setRoom(e.target.value)}
-                  required
-                  list="room-suggestions-add"
-                />
+                <label className="form-label">{t('staff.roomLabel')} <span style={{ color: 'red' }}>*</span></label>
+                <input type="text" className="form-control" placeholder={t('staff.roomPlaceholder')} value={room} onChange={e => setRoom(e.target.value)} required list="room-suggestions-add" maxLength={80} />
                 <datalist id="room-suggestions-add">
                   {roomOptions.map(r => <option key={r} value={r} />)}
                 </datalist>
               </div>
 
               <div className="form-group">
-                <label className="form-label">Category <span style={{ color: 'red' }}>*</span></label>
-                <select className="form-control" value={category} onChange={e => setCategory(e.target.value)} required>
-                  <option value="Infectious Waste">Infectious Waste</option>
-                  <option value="Sharps">Sharps</option>
-                  <option value="Chemical Waste">Chemical Waste</option>
-                  <option value="General Waste">General Waste</option>
-                  <option value="Contaminated Recyclable">Contaminated Recyclable</option>
+                <label className="form-label">{t('common.category')} <span style={{ color: 'red' }}>*</span></label>
+                <select className="form-control" value={category} onChange={e => handleCategoryChange(e.target.value)} required>
+                  {CATEGORIES.map(c => <option key={c} value={c}>{tc(c)}</option>)}
                 </select>
               </div>
 
               <div className="form-group">
-                <label className="form-label">Weight (kg) <span style={{ color: 'red' }}>*</span></label>
-                <input
-                  type="number" className="form-control"
-                  placeholder="2.5" step="0.1" min="0.1"
-                  value={weight}
-                  onChange={e => setWeight(e.target.value)}
-                  required
-                />
+                <label className="form-label">{t('staff.weightKg')} <span style={{ color: 'red' }}>*</span></label>
+                <input type="number" className="form-control" placeholder="2.5" step="0.1" min="0.1" max="500" value={weight} onChange={e => setWeight(e.target.value)} required />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Assigned Bin <span style={{ color: 'red' }}>*</span></label>
+                <label className="form-label">{t('common.assignedBin')} <span style={{ color: 'red' }}>*</span></label>
                 <select className="form-control" value={assignedBin} onChange={e => setAssignedBin(e.target.value)} required>
-                  <option value="Yellow">Yellow Bin (Infectious)</option>
-                  <option value="Red">Red Bin (Recyclable Plastic)</option>
-                  <option value="White">White Bin (Sharps)</option>
-                  <option value="Blue">Blue Bin (Glassware)</option>
-                  <option value="Green">Green Bin (General)</option>
+                  {BINS.map(b => <option key={b} value={b}>{tb(b)} {t('bins.bin')} ({t(`binHints.${b}`)})</option>)}
                 </select>
-              </div>
-
-              {/* Worker Assignment Selector */}
-              <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <UserCheck size={15} color="#2563EB" /> Assign Collection Worker <span style={{ color: 'red' }}>*</span>
-                </label>
-                <select
-                  className="form-control"
-                  value={selectedWorkerId}
-                  onChange={e => setSelectedWorkerId(e.target.value)}
-                  required
-                  style={{ fontWeight: 500 }}
-                >
-                  <option value="">-- Choose sanitation / collection worker --</option>
-                  {workers.map(w => (
-                    <option key={w._id} value={w._id}>
-                      {w.name} — {w.department || 'Logistics'} ({w.username || w.email})
-                    </option>
-                  ))}
-                </select>
-                <small style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: '4px', display: 'block' }}>
-                  Assigning a worker notifies them instantly and places this task directly in their Assigned Collections table.
+                <small style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4, fontSize: '0.78rem', color: binMismatch ? '#B45309' : '#059669' }}>
+                  {binMismatch ? <AlertTriangle size={13} /> : <CheckCircle size={13} />}
+                  {binMismatch ? t('staff.binMismatchWarning', { category: tc(category), bin: tb(expectedBin) }) : t('staff.binSuggestion', { category: tc(category), bin: tb(expectedBin) })}
                 </small>
               </div>
 
-              <div className="form-group" style={{ gridColumn: 'span 2', marginTop: '0.5rem' }}>
+              {/* Worker Assignment Selector */}
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <UserCheck size={15} color="#2563EB" /> {t('staff.assignWorker')} <span style={{ color: 'red' }}>*</span>
+                </label>
+                <select className="form-control" value={selectedWorkerId} onChange={e => setSelectedWorkerId(e.target.value)} required style={{ fontWeight: 500 }}>
+                  <option value="">{t('staff.chooseWorker')}</option>
+                  {workers.map(w => (
+                    <option key={w._id} value={w._id}>{w.name} — {w.department || 'Logistics'} ({w.username || w.email})</option>
+                  ))}
+                </select>
+                <small style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: '4px', display: 'block' }}>{t('staff.assignHint')}</small>
+              </div>
+
+              <div className="form-group" style={{ gridColumn: '1 / -1', marginTop: '0.5rem' }}>
                 <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', fontWeight: 600 }} disabled={submitting}>
-                  {submitting ? 'Logging & Assigning Task...' : 'Log & Assign Waste Record'}
+                  {submitting ? t('staff.submitting') : t('staff.submit')}
                 </button>
               </div>
             </form>
           </div>
 
           {/* Chatbot */}
-          <WasteChatbot role="staff" onSuggest={handleAISuggestion} />
+          <WasteChatbot role="staff" lang={lang} onSuggest={handleAISuggestion} />
         </div>
       </div>
     );
@@ -385,92 +356,85 @@ const StaffDashboard = () => {
 
   // ── HISTORY VIEW ─────────────────────────────────────────────────────────
   if (isHistoryView) {
+    const pageRecords = filteredHistory.slice((historyPage - 1) * PAGE_SIZE, historyPage * PAGE_SIZE);
     return (
       <div className="fade-in">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+        <div className="page-header">
           <div>
-            <h1 style={{ margin: 0 }}>Waste Log History</h1>
-            <p style={{ margin: '0.3rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              Complete historical repository of logged hospital biomedical waste records
-            </p>
+            <h1 style={{ margin: 0 }}>{t('staff.historyTitle')}</h1>
+            <p style={{ margin: '0.3rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>{t('staff.historySubtitle')}</p>
           </div>
-          <button className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => navigate('/staff')}>
-            <ArrowLeft size={15} /> Back to Dashboard
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button className="btn btn-outline" onClick={exportHistory}><Download size={15} /> {t('common.exportCsv')}</button>
+            <button className="btn btn-outline" onClick={() => navigate('/staff')}><ArrowLeft size={15} /> {t('common.backToDashboard')}</button>
+          </div>
         </div>
 
-        <div className="card fade-in">
+        <div className="card fade-in" style={{ padding: 0, overflow: 'hidden' }}>
           <div style={{ display: 'flex', gap: '0.75rem', padding: '1rem', borderBottom: '1px solid #E0E6ED', backgroundColor: '#F8FAFC', flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: '220px' }}>
               <Search size={16} color="var(--text-muted)" />
-              <input
-                type="text" placeholder="Search by Record ID, Room, Worker, Description..."
-                className="form-control" style={{ padding: '0.4rem 0.75rem' }}
-                value={historySearch}
-                onChange={e => setHistorySearch(e.target.value)}
-              />
+              <input type="text" placeholder={t('staff.historySearch')} className="form-control" style={{ padding: '0.4rem 0.75rem' }} value={historySearch} onChange={e => setHistorySearch(e.target.value)} />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Filter size={14} color="var(--text-muted)" />
-              <select className="form-control" style={{ padding: '0.4rem 0.75rem', fontSize: '0.875rem' }}
-                value={historyCategoryFilter} onChange={e => setHistoryCategoryFilter(e.target.value)}>
-                <option value="all">All Categories</option>
-                <option value="Infectious Waste">Infectious Waste</option>
-                <option value="Sharps">Sharps</option>
-                <option value="Chemical Waste">Chemical Waste</option>
-                <option value="General Waste">General Waste</option>
-                <option value="Contaminated Recyclable">Contaminated Recyclable</option>
+              <select className="form-control" style={{ padding: '0.4rem 2rem 0.4rem 0.75rem', fontSize: '0.875rem', width: 'auto' }} value={historyCategoryFilter} onChange={e => setHistoryCategoryFilter(e.target.value)}>
+                <option value="all">{t('common.allCategories')}</option>
+                {CATEGORIES.map(c => <option key={c} value={c}>{tc(c)}</option>)}
               </select>
             </div>
-            <button className="btn btn-outline" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '5px' }} onClick={fetchRecords}>
-              <RefreshCw size={13} /> Refresh
-            </button>
+            <select className="form-control" style={{ padding: '0.4rem 2rem 0.4rem 0.75rem', fontSize: '0.875rem', width: 'auto' }} value={historyStatusFilter} onChange={e => setHistoryStatusFilter(e.target.value)}>
+              <option value="all">{t('common.allStatus')}</option>
+              <option value="active">{ts('Pending')} / {ts('Assigned')}</option>
+              <option value="collected">{ts('Collected')}</option>
+              <option value="done">{ts('Completed')}</option>
+              <option value="cancelled">{ts('Cancelled')}</option>
+            </select>
+            <button className="btn btn-outline btn-sm" onClick={fetchRecords}><RefreshCw size={13} className={loading ? 'spin' : ''} /> {t('common.refresh')}</button>
           </div>
 
           <div className="table-container">
             <table>
               <thead>
                 <tr>
-                  <th>Record ID</th>
-                  <th>Created (IST)</th>
-                  <th>Room</th>
-                  <th>Category</th>
-                  <th>Weight</th>
-                  <th>Bin</th>
-                  <th>Assigned Worker</th>
-                  <th>Compliance</th>
-                  <th>Status</th>
+                  <th>{t('common.recordId')}</th>
+                  <th>{t('staff.createdIst')}</th>
+                  <th>{t('common.room')}</th>
+                  <th>{t('common.category')}</th>
+                  <th>{t('common.weight')}</th>
+                  <th>{t('common.bin')}</th>
+                  <th>{t('common.assignedWorker')}</th>
+                  <th>{t('staff.compliance')}</th>
+                  <th>{t('common.status')}</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan="9" style={{ textAlign: 'center', padding: '2rem' }}>Loading history...</td></tr>
-                ) : filteredHistory.length === 0 ? (
-                  <tr><td colSpan="9" style={{ textAlign: 'center', padding: '2rem' }}>No records found.</td></tr>
+                  <tr><td colSpan="9" style={{ textAlign: 'center', padding: '2rem' }}>{t('staff.loadingHistory')}</td></tr>
+                ) : pageRecords.length === 0 ? (
+                  <tr><td colSpan="9" style={{ textAlign: 'center', padding: '2rem' }}>{t('common.noRecords')}</td></tr>
                 ) : (
-                  filteredHistory.map(record => {
-                    const compliance = getComplianceStatus(record.category, record.assignedBin);
+                  pageRecords.map(record => {
+                    const compliant = isCompliant(record.category, record.assignedBin);
                     return (
                       <tr key={record._id || record.recordId}>
                         <td><strong>{record.recordId}</strong></td>
                         <td>{formatISTDate(record.createdAt)} <small style={{ color: 'var(--text-muted)' }}>{formatISTTime(record.createdAt)}</small></td>
                         <td><span style={{ fontWeight: 600, color: 'var(--primary-blue)' }}>{record.room}</span></td>
-                        <td>{record.category}</td>
-                        <td>{record.weight} kg</td>
-                        <td><span className={`bin-tag bin-${record.assignedBin.toLowerCase()}`}>{record.assignedBin}</span></td>
+                        <td>{tc(record.category)}</td>
+                        <td>{record.weight} {t('common.kg')}</td>
+                        <td><span className={binClass(record.assignedBin)}>{tb(record.assignedBin)}</span></td>
+                        <td><span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>{record.assignedTo || t('common.unassigned')}</span></td>
                         <td>
-                          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>
-                            {record.assignedTo || 'Unassigned'}
+                          <span className="badge" style={{ backgroundColor: compliant ? 'rgba(39,174,96,0.1)' : 'rgba(230,126,34,0.1)', color: compliant ? '#27AE60' : '#E67E22' }}>
+                            {compliant ? t('staff.correctSegregation') : t('staff.reviewRequired')}
                           </span>
                         </td>
-                        <td><span className="badge" style={{ backgroundColor: compliance.bg, color: compliance.color }}>{compliance.text}</span></td>
                         <td>
-                          <span className={`badge ${
-                            record.status === 'Completed' || record.status === 'Disposed' ? 'badge-success' :
-                            record.status === 'Collected' ? 'badge-info' : 'badge-warning'
-                          }`}>
-                            {record.status}
-                          </span>
+                          <StatusBadge status={record.status} />
+                          {record.status === 'Cancelled' && record.cancelReason && (
+                            <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: 2, fontStyle: 'italic' }}>"{record.cancelReason}"</div>
+                          )}
                         </td>
                       </tr>
                     );
@@ -479,56 +443,62 @@ const StaffDashboard = () => {
               </tbody>
             </table>
           </div>
+          <Pagination page={historyPage} pageSize={PAGE_SIZE} total={filteredHistory.length} onChange={setHistoryPage} />
         </div>
       </div>
     );
   }
 
   // ── MAIN DASHBOARD VIEW (/staff) ─────────────────────────────────────────
+  const displayRecords = dashboardTab === 'today' ? recordsCreatedToday : dashboardTab === 'overdue' ? overdueRecords : allRecords;
+  const pageRecords = displayRecords.slice((dashboardPage - 1) * PAGE_SIZE, dashboardPage * PAGE_SIZE);
+  const tabStyle = (key, activeColor = '#0F172A') => ({
+    padding: '4px 10px', fontSize: '0.8rem', borderRadius: '6px', fontWeight: 600, border: 'none', cursor: 'pointer',
+    backgroundColor: dashboardTab === key ? '#FFFFFF' : 'transparent',
+    color: dashboardTab === key ? activeColor : '#64748B',
+    boxShadow: dashboardTab === key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'
+  });
+
   return (
     <div className="fade-in">
       {/* Top Header with Notification Bell */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div className="page-header">
         <div>
-          <h1 style={{ margin: 0 }}>KMCH HOSPITAL — Medical Staff Dashboard</h1>
-          <p style={{ margin: '0.3rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            KMCH Kovai Medical Center & Hospital — Waste Segregation, Logging & Compliance
-          </p>
+          <h1 style={{ margin: 0 }}>{t('common.hospital')} — {t('staff.title')}</h1>
+          <p style={{ margin: '0.3rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>{t('common.hospitalFull')} — {t('staff.subtitle')}</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <NotificationBell role="staff" userId={currentUser.id} />
+          <NotificationBell />
           <div className="badge badge-info" style={{ padding: '0.55rem 1rem', fontSize: '0.875rem', fontWeight: 600 }}>
-            Today: {formatISTDate(new Date())}
+            {t('common.today')}: {formatISTDate(new Date())}
           </div>
         </div>
       </div>
 
       {/* 5 KPI Summary Cards strictly computed from DB */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+      <div className="kpi-grid" style={{ gap: '1rem' }}>
         <div className="card stat-card" style={{ borderLeft: '4px solid #3498DB' }}>
           <div className="stat-icon stat-blue"><Calendar size={24} /></div>
           <div className="stat-details">
-            <h4>Records Created Today</h4>
+            <h4>{t('staff.recordsCreatedToday')}</h4>
             <div className="value">{loading ? '...' : recordsCreatedToday.length}</div>
           </div>
         </div>
         <div className="card stat-card" style={{ borderLeft: '4px solid #9B59B6' }}>
-          <div className="stat-icon stat-blue"><Scale size={24} /></div>
+          <div className="stat-icon stat-purple"><Scale size={24} /></div>
           <div className="stat-details">
-            <h4>Total Weight Today</h4>
-            <div className="value">{loading ? '...' : `${totalTodayWeight.toFixed(1)} kg`}</div>
+            <h4>{t('staff.totalWeightToday')}</h4>
+            <div className="value">{loading ? '...' : `${totalTodayWeight.toFixed(1)} ${t('common.kg')}`}</div>
           </div>
         </div>
         <div className="card stat-card" style={{ borderLeft: '4px solid #F39C12' }}>
           <div className="stat-icon stat-yellow"><Clock size={24} /></div>
           <div className="stat-details">
-            <h4>Pending Collections</h4>
+            <h4>{t('staff.pendingCollections')}</h4>
             <div className="value" style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
               <span>{loading ? '...' : pendingCount}</span>
               {overdueRecords.length > 0 && (
-                <span style={{ fontSize: '0.75rem', color: '#DC2626', fontWeight: 700 }}>
-                  ({overdueRecords.length} overdue)
-                </span>
+                <span style={{ fontSize: '0.75rem', color: '#DC2626', fontWeight: 700 }}>({overdueRecords.length} {t('common.overdue').toLowerCase()})</span>
               )}
             </div>
           </div>
@@ -536,91 +506,38 @@ const StaffDashboard = () => {
         <div className="card stat-card" style={{ borderLeft: '4px solid #2563EB' }}>
           <div className="stat-icon stat-blue"><Truck size={24} /></div>
           <div className="stat-details">
-            <h4>Collected / Ready to Dispose</h4>
+            <h4>{t('staff.collectedReady')}</h4>
             <div className="value">{loading ? '...' : collectedCount}</div>
           </div>
         </div>
         <div className="card stat-card" style={{ borderLeft: '4px solid #2ECC71' }}>
           <div className="stat-icon stat-green"><ShieldCheck size={24} /></div>
           <div className="stat-details">
-            <h4>Disposed Today / Compliance</h4>
+            <h4>{t('staff.disposedToday')}</h4>
             <div className="value" style={{ fontSize: '1.25rem' }}>
-              {loading ? '...' : `${disposedTodayCount} done`} <span style={{ fontSize: '0.85rem', color: '#059669', fontWeight: 600 }}>({todayComplianceRate}%)</span>
+              {loading ? '...' : `${disposedTodayCount} ${t('staff.done')}`} <span style={{ fontSize: '0.85rem', color: '#059669', fontWeight: 600 }}>({todayComplianceRate}%)</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Table Card with Tabs */}
-      <div className="card">
-        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div className="card-header" style={{ padding: '1.25rem 1.25rem 0', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-              <Calendar size={18} color="#3498DB" /> Hospital Waste Collections
+              <Calendar size={18} color="#3498DB" /> {t('staff.hospitalCollections')}
             </h3>
-            {/* View Tabs */}
-            <div style={{ display: 'flex', gap: '4px', backgroundColor: '#F1F5F9', padding: '3px', borderRadius: '8px' }}>
-              <button
-                className="btn"
-                style={{
-                  padding: '4px 10px',
-                  fontSize: '0.8rem',
-                  borderRadius: '6px',
-                  fontWeight: 600,
-                  backgroundColor: dashboardTab === 'today' ? '#FFFFFF' : 'transparent',
-                  color: dashboardTab === 'today' ? '#0F172A' : '#64748B',
-                  boxShadow: dashboardTab === 'today' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                  border: 'none',
-                  cursor: 'pointer'
-                }}
-                onClick={() => setDashboardTab('today')}
-              >
-                Today's Records ({recordsCreatedToday.length})
-              </button>
-              <button
-                className="btn"
-                style={{
-                  padding: '4px 10px',
-                  fontSize: '0.8rem',
-                  borderRadius: '6px',
-                  fontWeight: 600,
-                  backgroundColor: dashboardTab === 'overdue' ? '#FFFFFF' : 'transparent',
-                  color: dashboardTab === 'overdue' ? '#DC2626' : '#64748B',
-                  boxShadow: dashboardTab === 'overdue' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                  border: 'none',
-                  cursor: 'pointer'
-                }}
-                onClick={() => setDashboardTab('overdue')}
-              >
-                Overdue / Outstanding ({overdueRecords.length})
-              </button>
-              <button
-                className="btn"
-                style={{
-                  padding: '4px 10px',
-                  fontSize: '0.8rem',
-                  borderRadius: '6px',
-                  fontWeight: 600,
-                  backgroundColor: dashboardTab === 'all' ? '#FFFFFF' : 'transparent',
-                  color: dashboardTab === 'all' ? '#0F172A' : '#64748B',
-                  boxShadow: dashboardTab === 'all' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                  border: 'none',
-                  cursor: 'pointer'
-                }}
-                onClick={() => setDashboardTab('all')}
-              >
-                All Records ({allHistoryRecords.length})
-              </button>
+            <div style={{ display: 'flex', gap: '4px', backgroundColor: '#F1F5F9', padding: '3px', borderRadius: '8px', flexWrap: 'wrap' }}>
+              <button style={tabStyle('today')} onClick={() => setDashboardTab('today')}>{t('staff.tabToday')} ({recordsCreatedToday.length})</button>
+              <button style={tabStyle('overdue', '#DC2626')} onClick={() => setDashboardTab('overdue')}>{t('staff.tabOverdue')} ({overdueRecords.length})</button>
+              <button style={tabStyle('all')} onClick={() => setDashboardTab('all')}>{t('staff.tabAll')} ({allRecords.length})</button>
             </div>
           </div>
 
           <div style={{ display: 'flex', gap: '0.6rem' }}>
-            <button className="btn btn-outline" style={{ padding: '0.35rem 0.8rem', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '5px' }} onClick={fetchRecords}>
-              <RefreshCw size={13} /> Refresh
-            </button>
-            <button className="btn btn-primary" style={{ padding: '0.35rem 0.8rem', fontSize: '0.82rem' }} onClick={() => navigate('/staff/add-waste')}>
-              <Plus size={14} style={{ marginRight: '4px' }} /> Add &amp; Assign Waste
-            </button>
+            <button className="btn btn-outline btn-sm" onClick={fetchRecords}><RefreshCw size={13} className={loading ? 'spin' : ''} /> {t('common.refresh')}</button>
+            <button className="btn btn-primary btn-sm" onClick={() => navigate('/staff/add-waste')}><Plus size={14} /> {t('staff.addAssignWaste')}</button>
           </div>
         </div>
 
@@ -628,188 +545,122 @@ const StaffDashboard = () => {
           <table>
             <thead>
               <tr>
-                <th>Record ID</th>
-                <th>Time (IST)</th>
-                <th>Room</th>
-                <th>Category</th>
-                <th>Weight</th>
-                <th>Assigned Bin</th>
-                <th>Worker Assigned</th>
-                <th>Status</th>
-                <th>Actions / Reminder</th>
+                <th>{t('common.recordId')}</th>
+                <th>{t('staff.timeIst')}</th>
+                <th>{t('common.room')}</th>
+                <th>{t('common.category')}</th>
+                <th>{t('common.weight')}</th>
+                <th>{t('common.assignedBin')}</th>
+                <th>{t('staff.workerAssigned')}</th>
+                <th>{t('common.status')}</th>
+                <th>{t('staff.actionsReminder')}</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="9" style={{ textAlign: 'center', padding: '1.5rem' }}>Loading waste records...</td></tr>
-              ) : (
-                (() => {
-                  const displayRecords = dashboardTab === 'today' ? recordsCreatedToday :
-                    dashboardTab === 'overdue' ? overdueRecords : allHistoryRecords;
-                  
-                  if (displayRecords.length === 0) {
-                    return (
-                      <tr>
-                        <td colSpan="9" style={{ textAlign: 'center', padding: '2rem', color: '#94A3B8' }}>
-                          {dashboardTab === 'today' ? "No waste records created today yet. Click 'Add & Assign Waste' above." :
-                           dashboardTab === 'overdue' ? "No overdue collections! All tasks are on schedule." :
-                           "No hospital waste records found."}
-                        </td>
-                      </tr>
-                    );
-                  }
+                <tr><td colSpan="9" style={{ textAlign: 'center', padding: '1.5rem' }}>{t('staff.loadingRecords')}</td></tr>
+              ) : pageRecords.length === 0 ? (
+                <tr>
+                  <td colSpan="9" style={{ textAlign: 'center', padding: '2rem', color: '#94A3B8' }}>
+                    {dashboardTab === 'today' ? t('staff.noRecordsToday') : dashboardTab === 'overdue' ? t('staff.noOverdue') : t('staff.noRecordsFound')}
+                  </td>
+                </tr>
+              ) : pageRecords.map(record => {
+                const pending = isActive(record);
+                const overdueInfo = calculateOverdueInfo(record.assignedTime || record.createdAt, 120);
+                const isOverdue = pending && (!isTodayInIST(record.createdAt) || overdueInfo.isOverdue);
+                const remStatus = reminderState[record.recordId];
 
-                  return displayRecords.map(record => {
-                    const isPending = record.status === 'Pending' || record.status === 'Assigned';
-                    const overdueInfo = calculateOverdueInfo(record.assignedTime || record.createdAt, 120);
-                    const isOverdue = isPending && (!isTodayInIST(record.createdAt) || overdueInfo.isOverdue);
-                    const remStatus = reminderState[record.recordId];
-
-                    return (
-                      <tr key={record._id || record.recordId}>
-                        <td>
-                          <strong>{record.recordId}</strong>
-                          {isOverdue && (
-                            <span style={{
-                              display: 'block',
-                              fontSize: '0.7rem',
-                              color: '#DC2626',
-                              fontWeight: 700,
-                              marginTop: '2px'
-                            }}>
-                              ⚠ {overdueInfo.durationStr || 'Overdue'}
-                            </span>
+                return (
+                  <tr key={record._id || record.recordId}>
+                    <td>
+                      <strong>{record.recordId}</strong>
+                      {isOverdue && (
+                        <span style={{ display: 'block', fontSize: '0.7rem', color: '#DC2626', fontWeight: 700, marginTop: '2px' }}>⚠ {overdueInfo.durationStr || t('common.overdue')}</span>
+                      )}
+                    </td>
+                    <td>
+                      <div>{formatISTTime(record.createdAt)}</div>
+                      <small style={{ color: 'var(--text-muted)' }}>{formatISTDate(record.createdAt)}</small>
+                    </td>
+                    <td><span style={{ fontWeight: 600, color: 'var(--primary-blue)' }}>{record.room}</span></td>
+                    <td>{tc(record.category)}</td>
+                    <td>{record.weight} {t('common.kg')}</td>
+                    <td><span className={binClass(record.assignedBin)}>{tb(record.assignedBin)}</span></td>
+                    <td>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1E293B' }}>
+                        {record.assignedTo || <span style={{ color: '#94A3B8', fontStyle: 'italic' }}>{t('common.unassigned')}</span>}
+                      </span>
+                    </td>
+                    <td><StatusBadge status={record.status} /></td>
+                    <td>
+                      {pending ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            <button
+                              className="btn btn-outline"
+                              style={{ padding: '4px 8px', fontSize: '0.75rem', borderColor: isOverdue ? '#DC2626' : '#2563EB', color: isOverdue ? '#DC2626' : '#2563EB' }}
+                              disabled={Boolean(remStatus && remStatus.status === 'sending')}
+                              onClick={() => handleSendReminder(record)}
+                            >
+                              <Send size={11} /> {remStatus ? remStatus.msg : t('staff.sendReminder')}
+                            </button>
+                            <button className="btn btn-danger" style={{ padding: '4px 8px', fontSize: '0.75rem' }} title={t('staff.cancelTitle', { id: record.recordId })} onClick={() => { setCancelTarget(record); setCancelReason(''); }}>
+                              <XCircle size={11} /> {t('staff.cancelRecord')}
+                            </button>
+                          </div>
+                          {record.lastReminderSentAt && !remStatus && (
+                            <span style={{ fontSize: '0.68rem', color: '#64748B' }}>{t('staff.sent')}: {formatISTTime(record.lastReminderSentAt)}</span>
                           )}
-                        </td>
-                        <td>
-                          <div>{formatISTTime(record.createdAt)}</div>
-                          <small style={{ color: 'var(--text-muted)' }}>{formatISTDate(record.createdAt)}</small>
-                        </td>
-                        <td><span style={{ fontWeight: 600, color: 'var(--primary-blue)' }}>{record.room}</span></td>
-                        <td>{record.category}</td>
-                        <td>{record.weight} kg</td>
-                        <td><span className={`bin-tag bin-${record.assignedBin.toLowerCase()}`}>{record.assignedBin}</span></td>
-                        <td>
-                          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1E293B' }}>
-                            {record.assignedTo || <span style={{ color: '#94A3B8', fontStyle: 'italic' }}>Unassigned</span>}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`badge ${
-                            record.status === 'Completed' || record.status === 'Disposed' ? 'badge-success' : 
-                            record.status === 'Collected' ? 'badge-info' : 'badge-warning'
-                          }`}>
-                            {record.status}
-                          </span>
-                        </td>
-                        <td>
-                          {isPending ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                              <button
-                                className="btn btn-outline"
-                                style={{
-                                  padding: '4px 8px',
-                                  fontSize: '0.75rem',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  borderColor: isOverdue ? '#DC2626' : '#2563EB',
-                                  color: isOverdue ? '#DC2626' : '#2563EB',
-                                  fontWeight: 600,
-                                  cursor: 'pointer'
-                                }}
-                                disabled={Boolean(remStatus && remStatus.status === 'sending')}
-                                onClick={() => handleSendReminder(record)}
-                              >
-                                <Send size={11} /> {remStatus ? remStatus.msg : 'Send Reminder'}
-                              </button>
-                              {record.lastReminderSentAt && !remStatus && (
-                                <span style={{ fontSize: '0.68rem', color: '#64748B' }}>
-                                  Sent: {formatISTTime(record.lastReminderSentAt)}
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <span style={{ fontSize: '0.78rem', color: '#059669', fontWeight: 600 }}>
-                              ✓ Collected by {record.collectedBy || 'Worker'}
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  });
-                })()
-              )}
+                        </div>
+                      ) : record.status === 'Cancelled' ? (
+                        <span style={{ fontSize: '0.78rem', color: '#64748B' }}>{t('staff.cancelledBy', { name: record.cancelledBy || t('roles.medicalStaff') })}</span>
+                      ) : (
+                        <span style={{ fontSize: '0.78rem', color: '#059669', fontWeight: 600 }}>✓ {t('staff.collectedByWorker', { name: record.collectedBy || t('common.worker') })}</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
+        <Pagination page={dashboardPage} pageSize={PAGE_SIZE} total={displayRecords.length} onChange={setDashboardPage} />
       </div>
 
-      {/* ── Worker Verification & Bin Audit Section (Staff Dashboard) ─────────── */}
-      <div id="worker-verification-staff-section" className="card" style={{ marginTop: '1.5rem', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
-        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+      {/* ── Worker Verification & Bin Audit Section ─────────── */}
+      <div id="worker-verification-staff-section" className="card" style={{ marginTop: '1.5rem', padding: 0, overflow: 'hidden' }}>
+        <div className="card-header" style={{ padding: '1.25rem 1.25rem 0', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '38px', height: '38px', borderRadius: '10px',
-              backgroundColor: '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}>
+            <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <ShieldCheck size={22} color="#7C3AED" />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1E293B', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                Worker Verification &amp; Bin Audit
-                <span className="badge" style={{ backgroundColor: '#EDE9FE', color: '#7C3AED', fontSize: '0.75rem', fontWeight: 700 }}>
-                  Live Audit
-                </span>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1E293B', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                {t('staff.verificationTitle')}
+                <span className="badge" style={{ backgroundColor: '#EDE9FE', color: '#7C3AED', fontSize: '0.75rem', fontWeight: 700 }}>{t('staff.liveAudit')}</span>
               </h3>
-              <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                Track worker collection status, bag-to-bin color verification, and reported mismatches recalculated from actual DB records
-              </p>
+              <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>{t('staff.verificationSub')}</p>
             </div>
           </div>
-          <button
-            className="btn btn-outline"
-            style={{ padding: '0.35rem 0.8rem', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '5px' }}
-            onClick={fetchRecords}
-          >
-            <RefreshCw size={13} /> Refresh
-          </button>
         </div>
 
         {/* 3 Verification Metric Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', padding: '1rem 1.25rem', borderBottom: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}>
-          <div style={{ padding: '0.85rem 1rem', borderRadius: '10px', backgroundColor: '#FFFFFF', border: '1px solid #DBEAFE', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1E40AF', textTransform: 'uppercase' }}>Awaiting Verification</span>
-              <Truck size={17} color="#2563EB" />
+          {[
+            { label: t('staff.awaitingVerification'), sub: t('staff.awaitingVerificationSub'), value: liveRecords.filter(r => r.status === 'Collected').length, Icon: Truck, color: '#2563EB', border: '#DBEAFE', text: '#1E40AF', dark: '#1E3A8A' },
+            { label: t('staff.verifiedCompleted'), sub: t('staff.verifiedCompletedSub'), value: liveRecords.filter(r => isDone(r) && !hasMismatch(r)).length, Icon: CheckCircle, color: '#059669', border: '#A7F3D0', text: '#065F46', dark: '#064E3B' },
+            { label: t('staff.mismatchesReported'), sub: t('staff.mismatchesReportedSub'), value: liveRecords.filter(hasMismatch).length, Icon: AlertTriangle, color: '#DC2626', border: '#FECACA', text: '#991B1B', dark: '#7F1D1D' },
+          ].map(c => (
+            <div key={c.label} style={{ padding: '0.85rem 1rem', borderRadius: '10px', backgroundColor: '#FFFFFF', border: `1px solid ${c.border}`, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: c.text, textTransform: 'uppercase' }}>{c.label}</span>
+                <c.Icon size={17} color={c.color} />
+              </div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: c.dark, marginTop: '0.2rem' }}>{c.value}</div>
+              <div style={{ fontSize: '0.75rem', color: c.color }}>{c.sub}</div>
             </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1E3A8A', marginTop: '0.2rem' }}>
-              {allHistoryRecords.filter(r => r.status === 'Collected').length}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#3B82F6' }}>Physically collected waste awaiting worker bin-verification</div>
-          </div>
-
-          <div style={{ padding: '0.85rem 1rem', borderRadius: '10px', backgroundColor: '#FFFFFF', border: '1px solid #A7F3D0', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#065F46', textTransform: 'uppercase' }}>Verified &amp; Completed</span>
-              <CheckCircle size={17} color="#059669" />
-            </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#064E3B', marginTop: '0.2rem' }}>
-              {allHistoryRecords.filter(r => (r.status === 'Completed' || r.status === 'Disposed') && r.binVerified !== false).length}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#10B981' }}>Waste bags verified matching assigned bin colour and disposed</div>
-          </div>
-
-          <div style={{ padding: '0.85rem 1rem', borderRadius: '10px', backgroundColor: '#FFFFFF', border: '1px solid #FECACA', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#991B1B', textTransform: 'uppercase' }}>Mismatches Reported</span>
-              <AlertTriangle size={17} color="#DC2626" />
-            </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#7F1D1D', marginTop: '0.2rem' }}>
-              {allHistoryRecords.filter(r => Boolean(r.binMismatchNote) || r.binVerified === false).length}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#EF4444' }}>Discrepancies reported by collection workers</div>
-          </div>
+          ))}
         </div>
 
         {/* Verification Records Table */}
@@ -817,60 +668,46 @@ const StaffDashboard = () => {
           <table>
             <thead>
               <tr>
-                <th>Record ID</th>
-                <th>Room</th>
-                <th>Category</th>
-                <th>Assigned Bin</th>
-                <th>Collected By</th>
-                <th>Collection Status</th>
-                <th>Worker Verification Result</th>
+                <th>{t('common.recordId')}</th>
+                <th>{t('common.room')}</th>
+                <th>{t('common.category')}</th>
+                <th>{t('common.assignedBin')}</th>
+                <th>{t('common.collectedBy')}</th>
+                <th>{t('staff.collectionStatus')}</th>
+                <th>{t('staff.verificationResult')}</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="7" style={{ textAlign: 'center', padding: '1.5rem' }}>Loading worker verifications...</td></tr>
-              ) : allHistoryRecords.length === 0 ? (
-                <tr><td colSpan="7" style={{ textAlign: 'center', padding: '1.5rem' }}>No verification records found.</td></tr>
+                <tr><td colSpan="7" style={{ textAlign: 'center', padding: '1.5rem' }}>{t('staff.loadingVerifications')}</td></tr>
+              ) : liveRecords.length === 0 ? (
+                <tr><td colSpan="7" style={{ textAlign: 'center', padding: '1.5rem' }}>{t('staff.noVerification')}</td></tr>
               ) : (
-                allHistoryRecords.slice(0, 10).map(record => (
+                liveRecords.slice(0, 10).map(record => (
                   <tr key={record._id || record.recordId}>
                     <td><strong>{record.recordId}</strong></td>
                     <td><span style={{ fontWeight: 600, color: 'var(--primary-blue)' }}>{record.room}</span></td>
-                    <td>{record.category} ({record.weight} kg)</td>
-                    <td><span className={`bin-tag bin-${(record.assignedBin || '').toLowerCase()}`}>{record.assignedBin}</span></td>
+                    <td>{tc(record.category)} ({record.weight} {t('common.kg')})</td>
+                    <td><span className={binClass(record.assignedBin)}>{tb(record.assignedBin)}</span></td>
                     <td style={{ fontSize: '0.85rem' }}>
-                      <strong>{record.collectedBy || (record.assignedTo ? `${record.assignedTo} (Assigned)` : 'Unassigned')}</strong>
+                      <strong>{record.collectedBy || (record.assignedTo ? `${record.assignedTo} (${t('staff.assigned')})` : t('common.unassigned'))}</strong>
                       {record.collectedAt && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{formatISTDateTime(record.collectedAt)}</div>}
                     </td>
+                    <td><StatusBadge status={record.status} /></td>
                     <td>
-                      <span className={`badge ${record.status === 'Completed' || record.status === 'Disposed' ? 'badge-success' : record.status === 'Collected' ? 'badge-info' : 'badge-warning'}`}>
-                        {record.status}
-                      </span>
-                    </td>
-                    <td>
-                      {record.binMismatchNote ? (
+                      {hasMismatch(record) ? (
                         <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '2px' }}>
-                          <span className="badge" style={{ backgroundColor: '#FEE2E2', color: '#DC2626', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <AlertTriangle size={12} /> Mismatch Reported
-                          </span>
-                          <span style={{ fontSize: '0.75rem', color: '#B91C1C', fontStyle: 'italic' }}>
-                            "{record.binMismatchNote}"
-                          </span>
+                          <span className="badge" style={{ backgroundColor: '#FEE2E2', color: '#DC2626', fontWeight: 700 }}><AlertTriangle size={12} /> {t('staff.mismatchReported')}</span>
+                          {record.binMismatchNote && <span style={{ fontSize: '0.75rem', color: '#B91C1C', fontStyle: 'italic' }}>"{record.binMismatchNote}"</span>}
                         </div>
                       ) : record.binVerified ? (
-                        <span className="badge" style={{ backgroundColor: '#ECFDF5', color: '#059669', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <CheckCircle size={12} /> Bag Matched Bin
-                        </span>
+                        <span className="badge" style={{ backgroundColor: '#ECFDF5', color: '#059669', fontWeight: 700 }}><CheckCircle size={12} /> {t('staff.bagMatchedBin')}</span>
                       ) : record.status === 'Collected' ? (
-                        <span className="badge" style={{ backgroundColor: '#EFF6FF', color: '#2563EB', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <Clock size={12} /> Collected (Awaiting Verification)
-                        </span>
-                      ) : record.status === 'Completed' || record.status === 'Disposed' ? (
-                        <span className="badge" style={{ backgroundColor: '#ECFDF5', color: '#059669', fontWeight: 600 }}>
-                          ✓ Completed &amp; Disposed
-                        </span>
+                        <span className="badge" style={{ backgroundColor: '#EFF6FF', color: '#2563EB', fontWeight: 600 }}><Clock size={12} /> {t('staff.awaitingBadge')}</span>
+                      ) : isDone(record) ? (
+                        <span className="badge" style={{ backgroundColor: '#ECFDF5', color: '#059669', fontWeight: 600 }}>✓ {t('staff.completedDisposed')}</span>
                       ) : (
-                        <span style={{ fontSize: '0.8rem', color: '#94A3B8' }}>Pending Pickup</span>
+                        <span style={{ fontSize: '0.8rem', color: '#94A3B8' }}>{t('staff.pendingPickup')}</span>
                       )}
                     </td>
                   </tr>
@@ -880,6 +717,30 @@ const StaffDashboard = () => {
           </table>
         </div>
       </div>
+
+      {/* Cancel Record Modal */}
+      {cancelTarget && (
+        <div className="modal-overlay" onClick={() => !cancelling && setCancelTarget(null)}>
+          <div className="card modal-card fade-in" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setCancelTarget(null)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="var(--text-muted)" /></button>
+            <h3 style={{ marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: 8 }}><XCircle size={20} color="#DC2626" /> {t('staff.cancelTitle', { id: cancelTarget.recordId })}</h3>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>{t('staff.cancelPrompt')}</p>
+            <div style={{ padding: '0.75rem', backgroundColor: '#F8FAFC', borderRadius: 8, border: '1px solid var(--border-color)', fontSize: '0.85rem', marginBottom: '1rem', display: 'flex', gap: 8, alignItems: 'center' }}>
+              <Info size={15} color="#64748B" /> {cancelTarget.room} • {tc(cancelTarget.category)} • {cancelTarget.weight} {t('common.kg')} • {cancelTarget.assignedTo || t('common.unassigned')}
+            </div>
+            <div className="form-group">
+              <label className="form-label">{t('common.reason')} ({t('common.optional')})</label>
+              <textarea className="form-control" rows={2} value={cancelReason} onChange={e => setCancelReason(e.target.value)} placeholder={t('staff.cancelReasonPlaceholder')} maxLength={200} />
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => setCancelTarget(null)} disabled={cancelling}>{t('common.close')}</button>
+              <button className="btn btn-primary" style={{ flex: 1, backgroundColor: '#DC2626', borderColor: '#DC2626' }} onClick={confirmCancel} disabled={cancelling}>
+                {cancelling ? t('common.saving') : t('staff.confirmCancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -8,40 +8,44 @@ import {
   LogOut, 
   ShieldCheck, 
   Trash2,
-  Truck,
   History,
   UserCheck,
   UserCircle,
-  ClipboardList
+  ClipboardList,
+  X
 } from 'lucide-react';
+import { session } from '../services/api';
+import { useT } from '../i18n/LanguageContext';
+import LanguageSelector from './LanguageSelector';
 
-const Sidebar = ({ role }) => {
+const Sidebar = ({ role, open = false, onClose }) => {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+  const t = useT();
+  const currentUser = session.getUser() || {};
 
   const handleLogout = () => {
-    localStorage.removeItem('currentUser');
+    session.clear();
     navigate('/');
   };
 
   const adminLinks = [
-    { path: '/admin', icon: <LayoutDashboard size={19} />, label: 'Dashboard' },
-    { path: '/admin/users', icon: <Users size={19} />, label: 'User Management', badge: '150+' },
-    { path: '/admin/settings', icon: <Settings size={19} />, label: 'Settings' },
+    { path: '/admin', icon: <LayoutDashboard size={19} />, label: t('common.dashboard') },
+    { path: '/admin/users', icon: <Users size={19} />, label: t('nav.userManagement') },
+    { path: '/admin/settings', icon: <Settings size={19} />, label: t('nav.settings') },
   ];
 
   const staffLinks = [
-    { path: '/staff', icon: <LayoutDashboard size={19} />, label: 'Dashboard' },
-    { path: '/staff/add-waste', icon: <Trash2 size={19} />, label: 'Add Waste Record' },
-    { path: '/staff/history', icon: <Activity size={19} />, label: 'Waste History' },
-    { path: '/staff/profile', icon: <UserCircle size={19} />, label: 'My Profile' },
+    { path: '/staff', icon: <LayoutDashboard size={19} />, label: t('common.dashboard') },
+    { path: '/staff/add-waste', icon: <Trash2 size={19} />, label: t('nav.addWasteRecord') },
+    { path: '/staff/history', icon: <Activity size={19} />, label: t('nav.wasteHistory') },
+    { path: '/staff/profile', icon: <UserCircle size={19} />, label: t('nav.myProfile') },
   ];
 
   const workerLinks = [
-    { path: '/worker', icon: <LayoutDashboard size={19} />, label: 'Dashboard' },
-    { path: '/worker/assigned', icon: <ClipboardList size={19} />, label: 'Assigned Collections' },
-    { path: '/worker/history', icon: <History size={19} />, label: 'Collection History' },
-    { path: '/worker/profile', icon: <UserCheck size={19} />, label: 'My Profile' },
+    { path: '/worker', icon: <LayoutDashboard size={19} />, label: t('common.dashboard') },
+    { path: '/worker/assigned', icon: <ClipboardList size={19} />, label: t('nav.assignedCollections') },
+    { path: '/worker/history', icon: <History size={19} />, label: t('nav.collectionHistory') },
+    { path: '/worker/profile', icon: <UserCheck size={19} />, label: t('nav.myProfile') },
   ];
 
   let links = [];
@@ -50,34 +54,40 @@ const Sidebar = ({ role }) => {
   else if (role === 'worker') links = workerLinks;
 
   const userInitial = (currentUser.name || currentUser.username || role || 'U').charAt(0).toUpperCase();
+  const roleLabel = role === 'admin' ? t('roles.administrator') : role === 'staff' ? t('roles.medicalStaff') : t('roles.sanitationCrew');
 
   return (
-    <aside style={styles.sidebar}>
+    <aside className={`app-sidebar ${open ? 'open' : ''}`} style={styles.sidebar}>
       {/* Brand Header */}
       <div style={styles.header}>
         <div style={styles.logoBadge}>
           <ShieldCheck size={22} color="#FFFFFF" strokeWidth={2.4} />
         </div>
-        <div>
+        <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <h2 style={styles.title}>KMCH</h2>
-            <span style={styles.brandTag}>BIOWASTE</span>
+            <h2 style={styles.title}>{t('common.appName')}</h2>
+            <span style={styles.brandTag}>{t('common.brandTag')}</span>
           </div>
-          <div style={styles.subBrand}>Analytics & Audit Cloud</div>
+          <div style={styles.subBrand}>{t('common.brandSub')}</div>
         </div>
+        {onClose && (
+          <button onClick={onClose} className="sidebar-close" aria-label={t('common.close')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B', display: 'none' }}>
+            <X size={20} />
+          </button>
+        )}
       </div>
 
       {/* System Status Pill */}
       <div style={styles.statusBox}>
         <div style={styles.statusDot}></div>
         <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#059669' }}>
-          System Live • Operational
+          {t('common.systemLive')}
         </span>
       </div>
 
       {/* Navigation Links */}
       <nav style={styles.nav}>
-        <div style={styles.sectionLabel}>MAIN MENU</div>
+        <div style={styles.sectionLabel}>{t('common.mainMenu')}</div>
         {links.map((link) => (
           <NavLink 
             key={link.path} 
@@ -125,22 +135,22 @@ const Sidebar = ({ role }) => {
             {userInitial}
           </div>
           <div style={{ overflow: 'hidden', flex: 1 }}>
-            <div style={styles.userName} title={currentUser.name || 'System Admin'}>
-              {currentUser.name || 'System Admin'}
+            <div style={styles.userName} title={currentUser.name || ''}>
+              {currentUser.name || currentUser.username || roleLabel}
             </div>
-            <div style={styles.userRole}>
-              {role === 'admin' ? 'Administrator' : role === 'staff' ? 'Medical Staff' : 'Sanitation Crew'}
-            </div>
+            <div style={styles.userRole}>{roleLabel}</div>
           </div>
         </div>
+
+        <LanguageSelector style={{ width: '100%' }} />
 
         <button 
           onClick={handleLogout}
           style={styles.logoutBtn}
-          title="Sign Out"
+          title={t('common.logout')}
         >
           <LogOut size={16} />
-          <span>Log out</span>
+          <span>{t('common.logout')}</span>
         </button>
       </div>
     </aside>

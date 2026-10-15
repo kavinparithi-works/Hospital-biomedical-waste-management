@@ -2,12 +2,28 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const { requireRole } = require('../middleware/auth');
+
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+router.param('id', (req, res, next, id) => {
+  if (!/^[a-f\d]{24}$/i.test(id)) return res.status(400).json({ message: `Invalid user id: ${id}` });
+  next();
+});
 
 // GET /api/users - Get all users (with optional role, search, and status filtering)
+// Admin sees everyone; staff may only list active workers (for assignment dropdowns)
 router.get('/', async (req, res) => {
   try {
     const { role, search, status } = req.query;
     let query = {};
+
+    if (req.user.role !== 'admin') {
+      if (req.user.role !== 'staff' || role !== 'worker') {
+        return res.status(403).json({ message: 'You do not have permission to view users' });
+      }
+      query.isActive = { $ne: false };
+    }
 
     if (role && role !== 'all') {
       query.role = role;
@@ -20,7 +36,7 @@ router.get('/', async (req, res) => {
     }
 
     if (search) {
-      const searchRegex = new RegExp(search, 'i');
+      const searchRegex = new RegExp(escapeRegex(search), 'i');
       query.$or = [
         { name: searchRegex },
         { email: searchRegex },
@@ -39,12 +55,16 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/users - Admin adds a new user (Staff or Worker)
-router.post('/', async (req, res) => {
+router.post('/', requireRole('admin'), async (req, res) => {
   try {
     const { name, email, username, password, phone, role, department } = req.body;
 
     if (!name || (!email && !username) || !password || !role) {
       return res.status(400).json({ message: 'Name, Email/Username, Password, and Role are required' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
     }
 
     if (role !== 'staff' && role !== 'worker') {
@@ -101,10 +121,17 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/users/:id - Admin updates existing user (name, phone, department, role, password, status)
+// Non-admin users may update only their own name and phone.
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { name, phone, department, isActive, role, password } = req.body;
+    const isAdmin = req.user.role === 'admin';
+    const isSelf = req.user.id === id;
+
+    if (!isAdmin && !isSelf) {
+      return res.status(403).json({ message: 'You can only update your own profile' });
+    }
 
     const user = await User.findById(id);
     if (!user) {
@@ -112,14 +139,20 @@ router.put('/:id', async (req, res) => {
     }
 
     if (name) user.name = name.trim();
-    if (phone !== undefined) user.phone = phone.trim();
-    if (department) user.department = department.trim();
-    if (role && (role === 'staff' || role === 'worker')) user.role = role;
-    if (isActive !== undefined) user.isActive = Boolean(isActive);
+    if (phone !== undefined) user.phone = String(phone).trim();
 
-    if (password && password.trim().length > 0) {
-      const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(password.trim(), salt);
+    if (isAdmin) {
+      if (department) user.department = department.trim();
+      if (role && user.role !== 'admin' && (role === 'staff' || role === 'worker')) user.role = role;
+      if (isActive !== undefined && user.role !== 'admin') user.isActive = Boolean(isActive);
+
+      if (password && password.trim().length > 0) {
+        if (password.trim().length < 6) {
+          return res.status(400).json({ message: 'Password must be at least 6 characters' });
+        }
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(password.trim(), salt);
+      }
     }
 
     await user.save();
@@ -144,7 +177,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // PATCH /api/users/:id/toggle-active - Toggle user active/inactive status
-router.patch('/:id/toggle-active', async (req, res) => {
+router.patch('/:id/toggle-active', requireRole('admin'), async (req, res) => {
   try {
     const { id } = req.params;
     const user = await User.findById(id);
@@ -170,7 +203,7 @@ router.patch('/:id/toggle-active', async (req, res) => {
 });
 
 // DELETE /api/users/:id - Admin deletes a user
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     const { id } = req.params;
     const user = await User.findById(id);

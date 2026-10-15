@@ -1,0 +1,14 @@
+# Local MongoDB for development: `docker compose up -d mongo`
+# The backend's default MONGO_URI (mongodb://127.0.0.1:27017/biowaste_db) points at this instance.
+services:
+  mongo:
+    image: mongo:7
+    container_name: biowaste-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - biowaste-mongo-data:/data/db
+
+volumes:
+  biowaste-mongo-data:

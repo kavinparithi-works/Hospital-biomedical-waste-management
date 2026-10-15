@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { CATEGORIES, BINS } = require('../utils/compliance');
 
 const wasteRecordSchema = new mongoose.Schema({
   recordId: {
@@ -18,16 +19,17 @@ const wasteRecordSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
-    enum: ['Infectious Waste', 'Sharps', 'Chemical Waste', 'General Waste', 'Contaminated Recyclable']
+    enum: CATEGORIES
   },
   weight: {
     type: Number,
-    required: true
+    required: true,
+    min: 0.01
   },
   assignedBin: {
     type: String,
     required: true,
-    enum: ['Yellow', 'Red', 'White', 'Blue', 'Green']
+    enum: BINS
   },
   status: {
     type: String,
@@ -85,6 +87,18 @@ const wasteRecordSchema = new mongoose.Schema({
   reminderCount: {
     type: Number,
     default: 0
+  },
+  cancelledAt: {
+    type: Date,
+    default: null
+  },
+  cancelledBy: {
+    type: String,
+    default: ''
+  },
+  cancelReason: {
+    type: String,
+    default: ''
   }
 }, {
   timestamps: true

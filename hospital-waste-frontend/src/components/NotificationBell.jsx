@@ -1,32 +1,30 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Check, Clock, AlertTriangle, ClipboardList, CheckCircle, Package, X } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Bell, AlertTriangle, ClipboardList, CheckCircle, Package, XCircle } from 'lucide-react';
 import { api } from '../services/api';
+import { useT } from '../i18n/LanguageContext';
 
-const NotificationBell = ({ role = 'worker', userId, onSelectTask }) => {
+const NotificationBell = ({ onSelectTask }) => {
+  const t = useT();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   const panelRef = useRef(null);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
-      setLoading(true);
-      const data = await api.getNotifications({ userId: userId || '', role });
+      const data = await api.getNotifications();
       setNotifications(data.notifications || []);
       setUnreadCount(data.unreadCount || 0);
     } catch (err) {
-      console.warn('Failed to load notifications:', err);
-    } finally {
-      setLoading(false);
+      if (err.status !== 401) console.warn('Failed to load notifications:', err.message);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 15000); // 15s refresh
     return () => clearInterval(interval);
-  }, [userId, role]);
+  }, [fetchNotifications]);
 
   // Click outside to close
   useEffect(() => {
@@ -57,7 +55,7 @@ const NotificationBell = ({ role = 'worker', userId, onSelectTask }) => {
 
   const handleMarkAllRead = async () => {
     try {
-      await api.markAllNotificationsRead(userId || '', role);
+      await api.markAllNotificationsRead();
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch (err) {
@@ -85,12 +83,11 @@ const NotificationBell = ({ role = 'worker', userId, onSelectTask }) => {
     if (!dateStr) return '';
     const diffMs = Date.now() - new Date(dateStr).getTime();
     const mins = Math.floor(diffMs / 60000);
-    if (mins < 1) return 'Just now';
-    if (mins < 60) return `${mins}m ago`;
+    if (mins < 1) return t('common.justNow');
+    if (mins < 60) return t('common.minutesAgo', { n: mins });
     const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
+    if (hours < 24) return t('common.hoursAgo', { n: hours });
+    return t('common.daysAgo', { n: Math.floor(hours / 24) });
   };
 
   const getNotifIcon = (type) => {
@@ -103,6 +100,8 @@ const NotificationBell = ({ role = 'worker', userId, onSelectTask }) => {
         return <Package size={16} color="#059669" />;
       case 'disposal':
         return <CheckCircle size={16} color="#16A34A" />;
+      case 'status_update':
+        return <XCircle size={16} color="#64748B" />;
       default:
         return <Bell size={16} color="#64748B" />;
     }
@@ -116,7 +115,7 @@ const NotificationBell = ({ role = 'worker', userId, onSelectTask }) => {
           setIsOpen(!isOpen);
           if (!isOpen) fetchNotifications();
         }}
-        title="Notifications & Reminders"
+        title={t('notifications.tooltip')}
         style={{
           position: 'relative',
           background: '#FFFFFF',
@@ -183,7 +182,7 @@ const NotificationBell = ({ role = 'worker', userId, onSelectTask }) => {
             backgroundColor: '#F8FAFC'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0F172A' }}>Notifications</span>
+              <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0F172A' }}>{t('notifications.title')}</span>
               {unreadCount > 0 && (
                 <span style={{
                   backgroundColor: '#FEE2E2',
@@ -193,7 +192,7 @@ const NotificationBell = ({ role = 'worker', userId, onSelectTask }) => {
                   padding: '2px 8px',
                   borderRadius: '10px'
                 }}>
-                  {unreadCount} new
+                  {t('notifications.newCount', { n: unreadCount })}
                 </span>
               )}
             </div>
@@ -210,7 +209,7 @@ const NotificationBell = ({ role = 'worker', userId, onSelectTask }) => {
                   padding: 0
                 }}
               >
-                Mark all read
+                {t('notifications.markAllRead')}
               </button>
             )}
           </div>
@@ -220,7 +219,7 @@ const NotificationBell = ({ role = 'worker', userId, onSelectTask }) => {
             {notifications.length === 0 ? (
               <div style={{ padding: '30px 16px', textAlign: 'center', color: '#94A3B8' }}>
                 <Bell size={32} color="#CBD5E1" style={{ margin: '0 auto 8px', display: 'block' }} />
-                <p style={{ margin: 0, fontSize: '0.85rem' }}>No notifications right now.</p>
+                <p style={{ margin: 0, fontSize: '0.85rem' }}>{t('notifications.none')}</p>
               </div>
             ) : (
               notifications.map((notif) => (
@@ -245,7 +244,7 @@ const NotificationBell = ({ role = 'worker', userId, onSelectTask }) => {
                     width: '32px',
                     height: '32px',
                     borderRadius: '8px',
-                    backgroundColor: notif.type === 'reminder' ? '#FEE2E2' : notif.type === 'assignment' ? '#DBEAFE' : '#DCFCE7',
+                    backgroundColor: notif.type === 'reminder' ? '#FEE2E2' : notif.type === 'assignment' ? '#DBEAFE' : notif.type === 'status_update' ? '#F1F5F9' : '#DCFCE7',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -301,7 +300,7 @@ const NotificationBell = ({ role = 'worker', userId, onSelectTask }) => {
                   {!notif.isRead && (
                     <button
                       onClick={(e) => handleMarkAsRead(e, notif)}
-                      title="Mark as read"
+                      title={t('notifications.markRead')}
                       style={{
                         background: 'none',
                         border: 'none',

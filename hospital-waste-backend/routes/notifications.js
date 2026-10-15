@@ -3,27 +3,25 @@ const router = express.Router();
 const Notification = require('../models/Notification');
 const WasteRecord = require('../models/WasteRecord');
 const User = require('../models/User');
+const { requireRole } = require('../middleware/auth');
 
-// GET /api/notifications - Get notifications for user or role
+router.param('id', (req, res, next, id) => {
+  if (!/^[a-f\d]{24}$/i.test(id)) return res.status(400).json({ message: `Invalid notification id: ${id}` });
+  next();
+});
+
+// GET /api/notifications - Notifications addressed to the logged-in user, or broadcast to their role
 router.get('/', async (req, res) => {
   try {
-    const { userId, role } = req.query;
-    let query = {};
-
-    if (userId && role) {
-      // User-specific notifications OR role broadcast notifications with no specific user target
-      query = {
-        $or: [
-          { recipientUserId: userId },
-          { recipientUserId: '', recipientRole: { $in: [role, 'all'] } },
-          { recipientUserId: { $exists: false }, recipientRole: { $in: [role, 'all'] } }
-        ]
-      };
-    } else if (userId) {
-      query = { recipientUserId: userId };
-    } else if (role) {
-      query = { recipientRole: { $in: [role, 'all'] } };
-    }
+    const userId = req.user.id;
+    const role = req.user.role;
+    const query = {
+      $or: [
+        { recipientUserId: userId },
+        { recipientUserId: '', recipientRole: { $in: [role, 'all'] } },
+        { recipientUserId: { $exists: false }, recipientRole: { $in: [role, 'all'] } }
+      ]
+    };
 
     const notifications = await Notification.find(query).sort({ createdAt: -1 }).limit(100);
     const unreadCount = notifications.filter(n => !n.isRead).length;
@@ -56,14 +54,16 @@ router.patch('/:id/read', async (req, res) => {
 // PATCH /api/notifications/read-all - Mark all as read
 router.patch('/read-all', async (req, res) => {
   try {
-    const { userId, role } = req.body;
-    let queryConditions = [];
-    if (userId) queryConditions.push({ recipientUserId: userId });
-    if (role) {
-      queryConditions.push({ recipientRole: role });
-      queryConditions.push({ recipientRole: 'all' });
-    }
-    const query = queryConditions.length > 0 ? { $or: queryConditions, isRead: false } : { isRead: false };
+    const userId = req.user.id;
+    const role = req.user.role;
+    const query = {
+      isRead: false,
+      $or: [
+        { recipientUserId: userId },
+        { recipientUserId: '', recipientRole: { $in: [role, 'all'] } },
+        { recipientUserId: { $exists: false }, recipientRole: { $in: [role, 'all'] } }
+      ]
+    };
     await Notification.updateMany(query, { isRead: true });
     res.json({ message: 'All notifications marked as read' });
   } catch (err) {
@@ -73,9 +73,11 @@ router.patch('/read-all', async (req, res) => {
 });
 
 // POST /api/notifications/reminder - Staff sends an overdue reminder to assigned worker
-router.post('/reminder', async (req, res) => {
+router.post('/reminder', requireRole('staff', 'admin'), async (req, res) => {
   try {
-    const { wasteRecordId, recordId, staffName, staffId, cooldownSeconds = 60 } = req.body;
+    const { wasteRecordId, recordId, cooldownSeconds = 60 } = req.body;
+    const staffName = req.user.name || req.body.staffName;
+    const staffId = req.user.id;
 
     // Find the waste record
     let record = null;
@@ -89,8 +91,8 @@ router.post('/reminder', async (req, res) => {
       return res.status(404).json({ message: 'Waste record not found' });
     }
 
-    if (record.status === 'Completed' || record.status === 'Disposed') {
-      return res.status(400).json({ message: 'Waste record has already been disposed. No reminder needed.' });
+    if (record.status === 'Completed' || record.status === 'Disposed' || record.status === 'Cancelled') {
+      return res.status(400).json({ message: `Waste record is already ${record.status.toLowerCase()}. No reminder needed.` });
     }
 
     if (!record.assignedTo && !record.assignedToUserId) {

@@ -44,6 +44,7 @@ const BMW_BIN_RULES = {
   'Glassware': 'Blue',
   'Metallic Implants': 'Blue',
   'Glassware & Implants': 'Blue',
+  'Glassware & Metallic Implants': 'Blue',
   'General': 'Green',
   'General Waste': 'Green',
 };
@@ -81,7 +82,7 @@ Instructions:
 1. For EACH distinct item in the photo, output an object in the items array.
 2. Each item MUST have:
    - name: concise description (e.g. "Used injection with needle", "Blood-soaked cotton", "Syringe without needle", "IV set", "Empty medicine vial", "Used gloves", "Expired tablets")
-   - category: one of ["Sharps", "Infectious Waste", "Contaminated Recyclable", "Glassware & Implants", "General Waste"]
+   - category: one of ["Sharps", "Infectious Waste", "Chemical Waste", "Contaminated Recyclable", "Glassware & Metallic Implants", "General Waste"]
    - bin: one of ["White", "Yellow", "Red", "Blue", "Green"]
    - confidence: float between 0.0 and 1.0 from real visual analysis
    - disposal: treatment method (one sentence, e.g. "Autoclave or dry heat, then shredding.")
@@ -119,7 +120,7 @@ router.post('/classify-image', upload.single('image'), async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || 'gemini-2.5-flash' });
     const imagePart = { inlineData: { data: req.file.buffer.toString('base64'), mimeType: req.file.mimetype } };
 
     let rawText;

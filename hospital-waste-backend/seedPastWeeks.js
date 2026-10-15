@@ -1,5 +1,8 @@
+require('dotenv').config();
 const mongoose = require('mongoose');
 const WasteRecord = require('./models/WasteRecord');
+
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/biowaste_db';
 
 const STAFF_NAMES = [
   "Dr. Rajesh Sharma", "Nurse Priya Nair", "Dr. Ananya Iyer", "Staff Vikram Sen", "Dr. Kavita Deshmukh",
@@ -16,14 +19,15 @@ const rooms = ['ICU Bed 2', 'Emergency Ward A', 'Surgery OT 1', 'Pediatrics Ward
 const categories = [
   { name: 'Infectious Waste', bin: 'Yellow', baseWeight: 14 },
   { name: 'Contaminated Recyclable', bin: 'Red', baseWeight: 18 },
-  { name: 'Chemical Waste', bin: 'Blue', baseWeight: 8 },
+  { name: 'Chemical Waste', bin: 'Yellow', baseWeight: 8 },
+  { name: 'Glassware & Metallic Implants', bin: 'Blue', baseWeight: 6 },
   { name: 'Sharps', bin: 'White', baseWeight: 5 },
   { name: 'General Waste', bin: 'Green', baseWeight: 22 }
 ];
 
 async function seedPastWeeks() {
   try {
-    await mongoose.connect('mongodb://127.0.0.1:27017/biowaste_db');
+    await mongoose.connect(MONGO_URI);
     console.log('Connected to DB for past weeks seeding');
 
     // Create records for the past 6 weeks (from today going back 45 days)
@@ -46,6 +50,8 @@ async function seedPastWeeks() {
         const worker = WORKER_NAMES[(dayOffset + j) % WORKER_NAMES.length];
         const room = rooms[(dayOffset + j) % rooms.length];
 
+        const isCompleted = j % 2 === 0;
+        const collectedAt = new Date(recordDate.getTime() + (45 + ((dayOffset * 7 + j * 13) % 120)) * 60000);
         recordsToInsert.push({
           recordId: `WR-HIST-${recordCounter}`,
           description: `${cat.name} logged from ${room}`,
@@ -53,10 +59,14 @@ async function seedPastWeeks() {
           category: cat.name,
           weight,
           assignedBin: cat.bin,
-          status: j % 2 === 0 ? 'Completed' : 'Collected',
+          status: isCompleted ? 'Completed' : 'Collected',
           createdBy: staff,
+          assignedTo: worker,
           collectedBy: worker,
-          collectedAt: recordDate,
+          collectedAt,
+          completedAt: isCompleted ? new Date(collectedAt.getTime() + 30 * 60000) : null,
+          disposedAt: isCompleted ? new Date(collectedAt.getTime() + 30 * 60000) : null,
+          binVerified: isCompleted,
           createdAt: recordDate
         });
       }

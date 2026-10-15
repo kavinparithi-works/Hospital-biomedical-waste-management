@@ -13,3 +13,7 @@ __pycache__/
 
 # Build files
 dist/
+
+# Local databases & build output
+hospital-waste-dashboard/instance/
+*.local

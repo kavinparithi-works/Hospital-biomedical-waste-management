@@ -1,3 +1,4 @@
+require('dotenv').config();
 const mongoose = require('mongoose');
 const User = require('./models/User');
 const WasteRecord = require('./models/WasteRecord');
@@ -42,7 +43,7 @@ const WORKER_NAMES = [
 ];
 
 async function run() {
-  await mongoose.connect('mongodb://127.0.0.1:27017/biowaste_db');
+  await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/biowaste_db');
   console.log('Connected to DB');
   
   // Migration: Update legacy status

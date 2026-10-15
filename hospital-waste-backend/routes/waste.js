@@ -2,6 +2,19 @@ const express = require('express');
 const router = express.Router();
 const WasteRecord = require('../models/WasteRecord');
 const Notification = require('../models/Notification');
+const { requireRole } = require('../middleware/auth');
+const { isCompliant, hasMismatch, CATEGORIES, BINS } = require('../utils/compliance');
+
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const ACTIVE_STATUSES = ['Pending', 'Assigned'];
+const DONE_STATUSES = ['Completed', 'Disposed'];
+const sumWeight = (arr) => arr.reduce((sum, r) => sum + (Number(r.weight) || 0), 0);
+
+// Reject malformed Mongo ids up-front so handlers never throw CastErrors
+router.param('id', (req, res, next, id) => {
+  if (!/^[a-f\d]{24}$/i.test(id)) return res.status(400).json({ message: `Invalid record id: ${id}` });
+  next();
+});
 
 /**
  * Build IST-correct start and end UTC timestamps for a given date string (YYYY-MM-DD)
@@ -58,10 +71,19 @@ async function generateRecordId() {
   return candidate;
 }
 
+// Workers are always scoped to their own records regardless of query params
+function scopeWorker(req) {
+  if (req.user.role === 'worker') {
+    return { workerName: req.user.name, workerId: req.user.id };
+  }
+  return { workerName: req.query.workerName, workerId: req.query.workerId };
+}
+
 // GET /api/waste - Get all waste records (with optional date & worker filter)
 router.get('/', async (req, res) => {
   try {
-    const { date, workerName, workerId, status } = req.query;
+    const { date, status } = req.query;
+    const { workerName, workerId } = scopeWorker(req);
     let query = {};
     if (date === 'today') {
       const { startUTC, endUTC } = getISTDayBounds();
@@ -121,7 +143,7 @@ router.get('/pending-previous', async (req, res) => {
 // GET /api/waste/worker-stats - Dedicated statistics for Worker Dashboard
 router.get('/worker-stats', async (req, res) => {
   try {
-    const { workerName, workerId } = req.query;
+    const { workerName, workerId } = scopeWorker(req);
     const { startUTC: todayStart, endUTC: todayEnd } = getISTDayBounds();
 
     let workerQuery = {};
@@ -214,7 +236,8 @@ router.get('/worker-stats', async (req, res) => {
 // GET /api/waste/history - Collection history with filters and search for logged-in worker
 router.get('/history', async (req, res) => {
   try {
-    const { search, category, room, workerName, workerId } = req.query;
+    const { search, category, room } = req.query;
+    const { workerName, workerId } = scopeWorker(req);
     let query = { status: 'Completed' };
     if (category) query.category = category;
     if (room) query.room = room;
@@ -234,7 +257,7 @@ router.get('/history', async (req, res) => {
     }
 
     if (search) {
-      const searchRegex = new RegExp(search, 'i');
+      const searchRegex = new RegExp(escapeRegex(search), 'i');
       const searchConditions = [
         { recordId: searchRegex },
         { room: searchRegex },
@@ -279,28 +302,59 @@ router.get('/stats', async (req, res) => {
       return t >= dayStart.getTime() && t < dayEnd.getTime();
     });
 
-    const totalWeight = selectedDayRecords.reduce((sum, r) => sum + (Number(r.weight) || 0), 0);
-    const pendingCount = selectedDayRecords.filter(r => r.status === 'Pending' || r.status === 'Assigned').length;
-    const collectedCount = selectedDayRecords.filter(r => r.status === 'Collected' || r.status === 'Completed').length;
+    const liveDayRecords = selectedDayRecords.filter(r => r.status !== 'Cancelled');
+    const totalWeight = sumWeight(liveDayRecords);
+    const pendingCount = liveDayRecords.filter(r => ACTIVE_STATUSES.includes(r.status)).length;
+    const collectedCount = liveDayRecords.filter(r => r.status === 'Collected' || DONE_STATUSES.includes(r.status)).length;
+    const cancelledCount = selectedDayRecords.length - liveDayRecords.length;
 
-    const totalRecords = selectedDayRecords.length;
-    const complianceRate = totalRecords > 0
-      ? Math.min(100, Math.round(92 + (collectedCount / totalRecords) * 8))
-      : 100;
+    const totalRecords = liveDayRecords.length;
+    // Real segregation compliance: category placed in its statutory bin colour, and no mismatch reported by the worker
+    const compliantRecords = liveDayRecords.filter(r => isCompliant(r.category, r.assignedBin) && !hasMismatch(r));
+    const complianceRate = totalRecords > 0 ? Math.round((compliantRecords.length / totalRecords) * 100) : 100;
 
     const todayTotalRecords = totalRecords;
     const todayPending = pendingCount;
     const todayCompleted = collectedCount;
 
+    // Previous-day comparison for trend indicators
+    const prevDayStart = new Date(dayStart.getTime() - 86400000);
+    const prevDayRecords = allRecords.filter(r => {
+      const t = new Date(r.createdAt).getTime();
+      return t >= prevDayStart.getTime() && t < dayStart.getTime() && r.status !== 'Cancelled';
+    });
+    const prevWeight = sumWeight(prevDayRecords);
+    const weightChangePct = prevWeight > 0 ? Math.round(((totalWeight - prevWeight) / prevWeight) * 1000) / 10 : null;
+    const prevCompliant = prevDayRecords.filter(r => isCompliant(r.category, r.assignedBin) && !hasMismatch(r)).length;
+    const prevComplianceRate = prevDayRecords.length > 0 ? Math.round((prevCompliant / prevDayRecords.length) * 100) : null;
+    const complianceChangePct = prevComplianceRate === null ? null : complianceRate - prevComplianceRate;
+
+    // Average collection turnaround (creation -> collection) for the selected day, in minutes
+    const turnaroundSamples = liveDayRecords
+      .filter(r => r.collectedAt)
+      .map(r => (new Date(r.collectedAt).getTime() - new Date(r.createdAt).getTime()) / 60000)
+      .filter(m => m >= 0);
+    const avgTurnaroundMinutes = turnaroundSamples.length > 0
+      ? Math.round(turnaroundSamples.reduce((a, b) => a + b, 0) / turnaroundSamples.length)
+      : null;
+
     // Previous pending: pending from before the selected day
     const previousDaysPending = allRecords.filter(r =>
-      (r.status === 'Pending' || r.status === 'Assigned') &&
+      ACTIVE_STATUSES.includes(r.status) &&
       new Date(r.createdAt).getTime() < dayStart.getTime()
     ).length;
 
-    const infectious = selectedDayRecords.filter(r => r.category === 'Infectious Waste' || r.assignedBin === 'Yellow').reduce((sum, r) => sum + (Number(r.weight) || 0), 0);
-    const sharps = selectedDayRecords.filter(r => r.category === 'Sharps' || r.assignedBin === 'White').reduce((sum, r) => sum + (Number(r.weight) || 0), 0);
-    const general = selectedDayRecords.filter(r => r.category === 'General Waste' || r.assignedBin === 'Green' || r.assignedBin === 'Red' || r.assignedBin === 'Blue').reduce((sum, r) => sum + (Number(r.weight) || 0), 0);
+    const mismatchCount = liveDayRecords.filter(hasMismatch).length;
+
+    // Weight by statutory bin colour (exhaustive, no double counting)
+    const binBreakdown = {};
+    BINS.forEach(bin => { binBreakdown[bin] = Number(sumWeight(liveDayRecords.filter(r => r.assignedBin === bin)).toFixed(2)); });
+    const categoryWeights = {};
+    CATEGORIES.forEach(cat => { categoryWeights[cat] = Number(sumWeight(liveDayRecords.filter(r => r.category === cat)).toFixed(2)); });
+
+    const infectious = binBreakdown.Yellow;
+    const sharps = binBreakdown.White;
+    const general = binBreakdown.Green + binBreakdown.Red + binBreakdown.Blue;
 
     // Calculate Sunday-Saturday week bounds for the WEEK containing selectedDate
     const selectedISTDate = new Date(dayStart.getTime() + 5.5 * 60 * 60 * 1000);
@@ -314,14 +368,15 @@ router.get('/stats', async (req, res) => {
 
       const dayRecords = allRecords.filter(r => {
         const t = new Date(r.createdAt).getTime();
-        return t >= currentDayStart.getTime() && t < currentDayEnd.getTime();
+        return t >= currentDayStart.getTime() && t < currentDayEnd.getTime() && r.status !== 'Cancelled';
       });
 
       return {
         name: dayName,
-        infectious: Number(dayRecords.filter(r => r.category === 'Infectious Waste' || r.assignedBin === 'Yellow').reduce((sum, r) => sum + (Number(r.weight) || 0), 0).toFixed(1)) || 0,
-        sharps: Number(dayRecords.filter(r => r.category === 'Sharps' || r.assignedBin === 'White').reduce((sum, r) => sum + (Number(r.weight) || 0), 0).toFixed(1)) || 0,
-        general: Number(dayRecords.filter(r => r.category === 'General Waste' || r.assignedBin === 'Green' || r.assignedBin === 'Red' || r.assignedBin === 'Blue').reduce((sum, r) => sum + (Number(r.weight) || 0), 0).toFixed(1)) || 0
+        infectious: Number(sumWeight(dayRecords.filter(r => r.assignedBin === 'Yellow')).toFixed(1)) || 0,
+        sharps: Number(sumWeight(dayRecords.filter(r => r.assignedBin === 'White')).toFixed(1)) || 0,
+        general: Number(sumWeight(dayRecords.filter(r => ['Green', 'Red', 'Blue'].includes(r.assignedBin))).toFixed(1)) || 0,
+        records: dayRecords.length
       };
     });
 
@@ -354,7 +409,14 @@ router.get('/stats', async (req, res) => {
       todayPending,
       todayCompleted,
       previousDaysPending,
+      cancelledCount,
+      mismatchCount,
+      weightChangePct,
+      complianceChangePct,
+      avgTurnaroundMinutes,
       categoryBreakdown: { infectious, sharps, general },
+      binBreakdown,
+      categoryWeights,
       weeklyChartData,
       weekRangeLabel,
       recentActivity,
@@ -369,11 +431,21 @@ router.get('/stats', async (req, res) => {
 });
 
 // POST /api/waste - Staff logs a new waste record
-router.post('/', async (req, res) => {
+router.post('/', requireRole('staff', 'admin'), async (req, res) => {
   try {
-    const { description, room, category, weight, assignedBin, createdBy, assignedTo, assignedToUserId } = req.body;
+    const { description, room, category, weight, assignedBin, assignedTo, assignedToUserId } = req.body;
+    const createdBy = req.user.name || req.body.createdBy;
     if (!room || !category || !weight || !assignedBin) {
       return res.status(400).json({ message: 'Room number, Category, Weight, and Assigned Bin are required' });
+    }
+    if (!CATEGORIES.includes(category)) {
+      return res.status(400).json({ message: `Invalid category. Allowed: ${CATEGORIES.join(', ')}` });
+    }
+    if (!BINS.includes(assignedBin)) {
+      return res.status(400).json({ message: `Invalid bin. Allowed: ${BINS.join(', ')}` });
+    }
+    if (!(Number(weight) > 0)) {
+      return res.status(400).json({ message: 'Weight must be a positive number' });
     }
     const recordId = await generateRecordId();
     const isAssigned = Boolean(assignedTo || assignedToUserId);
@@ -424,14 +496,15 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/waste/:id/assign - Staff assigns/reassigns a worker to an existing waste record
-router.put('/:id/assign', async (req, res) => {
+router.put('/:id/assign', requireRole('staff', 'admin'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { assignedTo, assignedToUserId, staffName } = req.body;
+    const { assignedTo, assignedToUserId } = req.body;
+    const staffName = req.user.name || req.body.staffName;
     const record = await WasteRecord.findById(id);
     if (!record) return res.status(404).json({ message: 'Waste record not found' });
-    if (record.status === 'Completed' || record.status === 'Disposed') {
-      return res.status(400).json({ message: 'Cannot reassign an already completed/disposed record' });
+    if (DONE_STATUSES.includes(record.status) || record.status === 'Cancelled') {
+      return res.status(400).json({ message: `Cannot reassign a record with status '${record.status}'` });
     }
     record.assignedTo = assignedTo || '';
     record.assignedToUserId = assignedToUserId || '';
@@ -473,18 +546,22 @@ router.put('/:id/assign', async (req, res) => {
 });
 
 // PUT /api/waste/:id/collect - Worker marks waste as Collected
-router.put('/:id/collect', async (req, res) => {
+router.put('/:id/collect', requireRole('worker', 'admin'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { collectedBy, collectedByUserId } = req.body;
+    const collectedBy = req.user.name || req.body.collectedBy || 'Worker User';
+    const collectedByUserId = req.user.id;
     const record = await WasteRecord.findById(id);
     if (!record) return res.status(404).json({ message: 'Waste record not found' });
-    if (record.status === 'Collected' || record.status === 'Completed' || record.status === 'Disposed') {
+    if (record.status === 'Cancelled') {
+      return res.status(400).json({ message: 'This waste record was cancelled by staff' });
+    }
+    if (record.status === 'Collected' || DONE_STATUSES.includes(record.status)) {
       return res.status(400).json({ message: 'This waste record has already been collected or disposed' });
     }
     record.status = 'Collected';
-    record.collectedBy = collectedBy || 'Worker User';
-    record.collectedByUserId = collectedByUserId || '';
+    record.collectedBy = collectedBy;
+    record.collectedByUserId = collectedByUserId;
     record.collectedAt = new Date();
     await record.save();
 
@@ -519,10 +596,12 @@ router.put('/:id/collect', async (req, res) => {
 
 // PUT /api/waste/:id/complete - Worker marks waste as Completed (disposal done)
 // Enforces workflow: Pending/Assigned → Collected → Completed (Disposed)
-router.put('/:id/complete', async (req, res) => {
+router.put('/:id/complete', requireRole('worker', 'admin'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { collectedBy, collectedByUserId, binVerified, binMismatchNote } = req.body;
+    const { binVerified, binMismatchNote } = req.body;
+    const collectedBy = req.user.name || req.body.collectedBy;
+    const collectedByUserId = req.user.id;
     const record = await WasteRecord.findById(id);
     if (!record) return res.status(404).json({ message: 'Waste record not found' });
     if (record.status === 'Completed' || record.status === 'Disposed') {
@@ -567,6 +646,64 @@ router.put('/:id/complete', async (req, res) => {
   } catch (err) {
     console.error('Error marking waste as completed:', err);
     res.status(500).json({ message: 'Failed to update completion status' });
+  }
+});
+
+// PUT /api/waste/:id/cancel - Staff/Admin cancels a record that has not been collected yet
+router.put('/:id/cancel', requireRole('staff', 'admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const record = await WasteRecord.findById(id);
+    if (!record) return res.status(404).json({ message: 'Waste record not found' });
+    if (!ACTIVE_STATUSES.includes(record.status)) {
+      return res.status(400).json({ message: `Only Pending/Assigned records can be cancelled. Current status: ${record.status}` });
+    }
+    record.status = 'Cancelled';
+    record.cancelledAt = new Date();
+    record.cancelledBy = req.user.name || 'Medical Staff';
+    record.cancelReason = (reason || '').trim();
+    await record.save();
+
+    if (record.assignedToUserId || record.assignedTo) {
+      try {
+        await new Notification({
+          recipientUserId: record.assignedToUserId || '',
+          recipientRole: 'worker',
+          senderUserId: req.user.id,
+          senderName: record.cancelledBy,
+          recordId: record.recordId,
+          wasteRecordId: record._id,
+          type: 'status_update',
+          title: `Task Cancelled: ${record.recordId}`,
+          message: `${record.cancelledBy} cancelled the collection for ${record.room} (${record.category}, ${record.weight} kg).${record.cancelReason ? ' Reason: ' + record.cancelReason : ''}`,
+          room: record.room,
+          category: record.category,
+          weight: record.weight,
+          assignedBin: record.assignedBin
+        }).save();
+      } catch (errNotif) {
+        console.warn('Failed to dispatch cancellation notification:', errNotif);
+      }
+    }
+
+    res.json({ message: `Waste record ${record.recordId} cancelled`, record });
+  } catch (err) {
+    console.error('Error cancelling waste record:', err);
+    res.status(500).json({ message: 'Failed to cancel waste record' });
+  }
+});
+
+// DELETE /api/waste/:id - Admin permanently removes a record (audit cleanup)
+router.delete('/:id', requireRole('admin'), async (req, res) => {
+  try {
+    const record = await WasteRecord.findByIdAndDelete(req.params.id);
+    if (!record) return res.status(404).json({ message: 'Waste record not found' });
+    await Notification.deleteMany({ wasteRecordId: record._id });
+    res.json({ message: `Waste record ${record.recordId} deleted` });
+  } catch (err) {
+    console.error('Error deleting waste record:', err);
+    res.status(500).json({ message: 'Failed to delete waste record' });
   }
 });
 

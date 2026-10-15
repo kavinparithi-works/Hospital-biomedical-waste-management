@@ -2,6 +2,19 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const { signToken, requireAuth } = require('../middleware/auth');
+
+const publicUser = (user) => ({
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  username: user.username,
+  role: user.role,
+  department: user.department,
+  phone: user.phone,
+  isActive: user.isActive,
+  createdAt: user.createdAt
+});
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
@@ -36,17 +49,14 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid username or password' });
     }
 
+    if (user.isActive === false) {
+      return res.status(403).json({ message: 'This account has been deactivated. Please contact the administrator.' });
+    }
+
     res.json({
       message: 'Login successful',
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        username: user.username,
-        role: user.role,
-        department: user.department,
-        phone: user.phone
-      }
+      token: signToken(user),
+      user: publicUser(user)
     });
   } catch (err) {
     console.error('Login error:', err);
@@ -54,11 +64,23 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// GET /api/auth/me - Refresh the current user's profile from the database
+router.get('/me', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (user.isActive === false) return res.status(403).json({ message: 'This account has been deactivated.' });
+    res.json({ user: publicUser(user) });
+  } catch (err) {
+    console.error('Fetch profile error:', err);
+    res.status(500).json({ message: 'Server error fetching profile' });
+  }
+});
 
 // POST /api/auth/change-password
-router.post('/change-password', async (req, res) => {
+router.post('/change-password', requireAuth, async (req, res) => {
   try {
-    const { userId, username, currentPassword, newPassword } = req.body;
+    const { currentPassword, newPassword } = req.body;
 
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ message: 'Current and new passwords are required' });
@@ -68,14 +90,7 @@ router.post('/change-password', async (req, res) => {
       return res.status(400).json({ message: 'New password must be at least 6 characters' });
     }
 
-    // Find user by id or username
-    let user;
-    if (userId) {
-      user = await User.findById(userId);
-    } else if (username) {
-      user = await User.findOne({ username: username.trim().toLowerCase() });
-    }
-
+    const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
